@@ -41,11 +41,12 @@ class ProjectSearch extends Project
     public function search($params)
     {
         $query = Project::find();
-
+//        $query = Project::find();
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
             'query' => $query,
+
         ]);
 
         $this->load($params);

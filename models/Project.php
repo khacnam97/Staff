@@ -19,6 +19,7 @@ class Project extends \yii\db\ActiveRecord
     /**
      * {@inheritdoc}
      */
+    public $staff;
     public static function tableName()
     {
         return 'project';
@@ -33,6 +34,7 @@ class Project extends \yii\db\ActiveRecord
             [['projectManagerId'], 'integer'],
             [['createDate', 'updateDate'], 'safe'],
             [['name', 'description'], 'string', 'max' => 255],
+
         ];
     }
 
@@ -48,6 +50,15 @@ class Project extends \yii\db\ActiveRecord
             'description' => 'Description',
             'createDate' => 'Create Date',
             'updateDate' => 'Update Date',
+            'username'  => 'Project Manager'
         ];
+    }
+    public function getUser()
+    {
+        return $this->hasOne(User::class, ['id' => 'projectManagerId']);
+
+    }
+    public function getUserName() {
+        return $this->user->username;
     }
 }

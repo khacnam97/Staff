@@ -41,6 +41,15 @@ class ProjectStaff extends \yii\db\ActiveRecord
             'id' => 'ID',
             'userId' => 'User ID',
             'projectId' => 'Project ID',
+            'userName' => 'Staff'
         ];
+    }
+    public function getUser()
+    {
+        return $this->hasOne(User::class, ['id' => 'userId']);
+
+    }
+    public function getUserName() {
+        return $this->user->username;
     }
 }
