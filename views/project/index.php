@@ -6,9 +6,10 @@ use yii\grid\GridView;
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\ProjectSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
-
+/* @var $staff  */
 $this->title = 'Projects';
 $this->params['breadcrumbs'][] = $this->title;
+//var_dump($staff);
 ?>
 <div class="project-index">
 
@@ -28,10 +29,35 @@ $this->params['breadcrumbs'][] = $this->title;
 
             'id',
             'name',
-            'projectManagerId',
+            'username',
             'description',
             'createDate',
-            //'updateDate',
+            'updateDate',
+
+            [
+                'format' => 'raw',
+//                'format' => 'html',
+                'class' => 'yii\grid\DataColumn',
+                'attribute'=>'Staff',
+                'value' => function ($data) use ($staff){
+                    foreach ($staff as $staffs) {
+
+                       if($staffs['projectId'] == $data->id){
+                           return $staffs['nameStaff'];
+                       }
+                    }
+                    return '<a href="" title="" ></a>';
+                },
+            ],
+            [
+                'format' => 'raw',
+//                'format' => 'html',
+                'class' => 'yii\grid\DataColumn',
+                'attribute'=>'Add Staff',
+                'value' => function ($data) {
+                    return '<a href="" title="" >Add staff</a>';
+                },
+            ],
 
             ['class' => 'yii\grid\ActionColumn'],
         ],

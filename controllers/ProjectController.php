@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\ProjectStaff;
 use Yii;
 use app\models\Project;
 use app\models\ProjectSearch;
@@ -67,18 +68,21 @@ class ProjectController extends Controller
      */
     public function actionIndex()
     {
-        if(Yii::$app->user->identity->role ==1){
+//        if(Yii::$app->user->identity->role ==1){
             $searchModel = new ProjectSearch();
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-
+            $staff =(new \yii\db\Query())->select('userId,projectId,user.username,GROUP_CONCAT(user.username) as nameStaff ')->from('project_staff')
+                                         ->leftJoin('project' ,'project.id = project_staff.projectId')
+                                         ->leftJoin('user' , 'user.id = project_staff.userId')->groupBy('projectId')->all();
             return $this->render('index', [
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
+                'staff' => $staff
             ]);
-        }
-        else{
-            throw new ForbiddenHttpException;
-        }
+//        }
+//        else{
+//            throw new ForbiddenHttpException;
+//        }
     
     }
 
@@ -103,13 +107,25 @@ class ProjectController extends Controller
     public function actionCreate()
     {
         $model = new Project();
-
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
+        $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
+        if ($model->load(Yii::$app->request->post()) ) {
+            $userId =Yii::$app->user->identity->id;
+            $model->projectManagerId = $userId;
+            $model->save();
+            $StaffList = $_POST['Project']['staff'];
+            foreach ($StaffList as $value)
+            {
+                $newProjectStaff = new ProjectStaff();
+                $newProjectStaff->userId = $value;
+                $newProjectStaff->projectId = $model->id ;
+                $newProjectStaff->save();
+            }
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('create', [
             'model' => $model,
+            'staff' => $staff
         ]);
     }
 
@@ -123,13 +139,25 @@ class ProjectController extends Controller
     public function actionUpdate($id)
     {
         $model = $this->findModel($id);
+        $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
+        $projectStaff =(new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
 
         if ($model->load(Yii::$app->request->post()) && $model->save()) {
+            $StaffList = $_POST['Project']['staff'];
+            foreach ($StaffList as $value)
+            {
+                $newProjectStaff = new ProjectStaff();
+                $newProjectStaff->userId = $value;
+                $newProjectStaff->projectId = $model->id ;
+                $newProjectStaff->save();
+            }
             return $this->redirect(['view', 'id' => $model->id]);
         }
 
         return $this->render('update', [
             'model' => $model,
+            'staff' => $staff,
+            'projectStaff' => $projectStaff
         ]);
     }
 
