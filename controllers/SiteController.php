@@ -73,12 +73,15 @@ class SiteController extends Controller
     public function actionLogin()
     {
         if (!Yii::$app->user->isGuest) {
-            return $this->goHome();
+            return $this->redirect('user/index');
         }
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+            if(Yii::$app->user->identity->role ==1) {
+                return $this->redirect('user/index');
+            }
+            else  return $this->redirect('project/index');
         }
 
         $model->password = '';
@@ -92,7 +95,10 @@ class SiteController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             if ($user = $model->signup()) {
                 if (Yii::$app->getUser()->login($user)) {
-                    return $this->goHome();
+                    if(Yii::$app->user->identity->role ==1) {
+                        return $this->redirect('user/index');
+                    }
+                    else return $this->redirect('project/index');
                 }
             }
         }

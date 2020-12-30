@@ -3,6 +3,7 @@
 namespace app\controllers;
 
 use app\models\ProjectStaff;
+use app\models\User;
 use Yii;
 use app\models\Project;
 use app\models\ProjectSearch;
@@ -68,7 +69,7 @@ class ProjectController extends Controller
      */
     public function actionIndex()
     {
-//        if(Yii::$app->user->identity->role ==1){
+        if(Yii::$app->user->identity->role !=1){
             $searchModel = new ProjectSearch();
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
             $staff =(new \yii\db\Query())->select('userId,projectId,user.username,GROUP_CONCAT(user.username) as nameStaff ')->from('project_staff')
@@ -79,11 +80,10 @@ class ProjectController extends Controller
                 'dataProvider' => $dataProvider,
                 'staff' => $staff
             ]);
-//        }
-//        else{
-//            throw new ForbiddenHttpException;
-//        }
-    
+        }
+        else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**
@@ -99,6 +99,13 @@ class ProjectController extends Controller
         ]);
     }
 
+    public function action($id)
+    {
+        return $this->render('view', [
+            'model' => $this->findModel($id),
+        ]);
+    }
+
     /**
      * Creates a new Project model.
      * If creation is successful, the browser will be redirected to the 'view' page.
@@ -106,27 +113,44 @@ class ProjectController extends Controller
      */
     public function actionCreate()
     {
-        $model = new Project();
-        $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
-        if ($model->load(Yii::$app->request->post()) ) {
-            $userId =Yii::$app->user->identity->id;
-            $model->projectManagerId = $userId;
-            $model->save();
-            $StaffList = $_POST['Project']['staff'];
-            foreach ($StaffList as $value)
-            {
-                $newProjectStaff = new ProjectStaff();
-                $newProjectStaff->userId = $value;
-                $newProjectStaff->projectId = $model->id ;
-                $newProjectStaff->save();
+        if(Yii::$app->user->identity->role !=3){
+            $model = new Project();
+            $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
+            $projectManager =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 2])->all();
+            if ($model->load(Yii::$app->request->post()) ) {
+                if (Yii::$app->user->identity->role == 1){
+                    $userId =$_POST['Project']['project_manager'];
+                }
+                else{
+                    $userId =Yii::$app->user->identity->id;
+                }
+                $model->projectManagerId = $userId;
+                $model->save();
+                if (Yii::$app->user->identity->role == 2) {
+                    $StaffList = $_POST['Project']['staff'];
+                    foreach ($StaffList as $value)
+                    {
+                        $newProjectStaff = new ProjectStaff();
+                        $newProjectStaff->userId = $value;
+                        $newProjectStaff->projectId = $model->id ;
+                        $newProjectStaff->save();
+                    }
+                }
+
+
+                return $this->redirect(['view', 'id' => $model->id]);
             }
-            return $this->redirect(['view', 'id' => $model->id]);
+
+            return $this->render('create', [
+                'model' => $model,
+                'staff' => $staff,
+                'projectManager' => $projectManager
+            ]);
+        }
+        else{
+            throw new ForbiddenHttpException;
         }
 
-        return $this->render('create', [
-            'model' => $model,
-            'staff' => $staff
-        ]);
     }
 
     /**
@@ -138,27 +162,49 @@ class ProjectController extends Controller
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
-        $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
-        $projectStaff =(new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
+        if(Yii::$app->user->identity->role !=3){
+            $model = $this->findModel($id);
+            $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
+            $staffId = (new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
+            $projectStaff =(new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
+            $projectManager =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 2])->all();
 
-        if ($model->load(Yii::$app->request->post()) && $model->save()) {
-            $StaffList = $_POST['Project']['staff'];
-            foreach ($StaffList as $value)
-            {
-                $newProjectStaff = new ProjectStaff();
-                $newProjectStaff->userId = $value;
-                $newProjectStaff->projectId = $model->id ;
-                $newProjectStaff->save();
+            if ($model->load(Yii::$app->request->post())) {
+                if (Yii::$app->user->identity->role == 1){
+                    $userId =$_POST['Project']['project_manager'];
+                }
+                else{
+                    $userId =Yii::$app->user->identity->id;
+                }
+                $model->projectManagerId = $userId;
+                $model->save();
+                if (Yii::$app->user->identity->role == 2) {
+                    $StaffList = $_POST['Project']['staff'];
+                    foreach ($StaffList as $value) {
+                        $valueId =array();
+                        $valueId['userId'] =$value;
+
+                        if(!in_array($valueId,$staffId)){
+                            $newProjectStaff = new ProjectStaff();
+                            $newProjectStaff->userId = $value;
+                            $newProjectStaff->projectId = $model->id;
+                            $newProjectStaff->save();
+                        }
+                    }
+                }
+                return $this->redirect(['view', 'id' => $model->id]);
             }
-            return $this->redirect(['view', 'id' => $model->id]);
-        }
 
-        return $this->render('update', [
-            'model' => $model,
-            'staff' => $staff,
-            'projectStaff' => $projectStaff
-        ]);
+            return $this->render('update', [
+                'model' => $model,
+                'staff' => $staff,
+                'projectStaff' => $projectStaff,
+                'projectManager' => $projectManager
+            ]);
+        }
+        else{
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**
@@ -170,9 +216,13 @@ class ProjectController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
-
-        return $this->redirect(['index']);
+        if(Yii::$app->user->identity->role !=3){
+            $this->findModel($id)->delete();
+            return $this->redirect(['index']);
+        }
+        else{
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**

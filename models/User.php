@@ -10,7 +10,9 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     // const STATUS_DELETED = 0;
     // const STATUS_ACTIVE = 10;
 
-
+    public $old_password ;
+    public $new_password;
+    public $repeat_password;
     /**
      * @inheritdoc
      */
@@ -21,7 +23,9 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     {
         return [
             [['role'], 'integer'],
+
             [['username', 'password', 'email', 'description'], 'string', 'max' => 255],
+//            [['old_password','new_password','repeat_password'], 'required']
         ];
     }
 
@@ -37,6 +41,9 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
             'email' => 'Email',
             'role' => 'Role',
             'description' => 'Description',
+            'old_password' => 'Old Password',
+            'repeat_password' => 'Repeat Password',
+            'new_password' => 'New Password'
         ];
     }
 
@@ -58,6 +65,15 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     //         ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_DELETED]],
     //     ];
     // }
+
+//    public function findPasswords($attribute, $params){
+//        $userId = Yii::$app->user->id;
+//        $user = User::findOne($userId);
+//        $password = $user->password;
+//        $old_password = sha1($this->old_password);
+//        if($password!=$old_password)
+//            $this->addError($attribute,'Old password is incorrect');
+//    }
 
     /**
      * @inheritdoc
