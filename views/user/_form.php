@@ -18,7 +18,9 @@ use yii\widgets\ActiveForm;
     <?php }?>
     <?= $form->field($model, 'email')->textInput(['maxlength' => true]) ?>
 
-    <?= $form->field($model, 'role')->textInput() ?>
+    <?=  Html::activeDropDownList($model, 'role',
+        array(1 => 'Admin', 2 => 'Project Manager', 3 => 'Staff'), ['prompt'=>'Role','class'=>'form-control'])
+    ?>
 
     <?= $form->field($model, 'description')->textInput(['maxlength' => true]) ?>
 

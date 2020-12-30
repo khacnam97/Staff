@@ -113,3 +113,13 @@ a.desc:after {
 .nav > li > form > button.logout:focus {
     outline: none;
 }
+
+.nav > li > ul > li > form > button.logout:focus,
+.nav > li > ul > li > form > button.logout:hover {
+    text-decoration: none;
+    color: #0f0f0f;
+}
+
+.nav > li> ul > li > form > button.logout:focus {
+    outline: none;
+}

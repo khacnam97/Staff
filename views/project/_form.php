@@ -8,6 +8,7 @@ use yii\helpers\ArrayHelper;
 /* @var $model app\models\Project */
 /* @var $form yii\widgets\ActiveForm */
 /* @var $staff */
+/* @var $projectManager */
 ?>
 
 <div class="project-form">
@@ -18,10 +19,15 @@ use yii\helpers\ArrayHelper;
 
     <?= $form->field($model, 'description')->textInput(['maxlength' => true]) ?>
 
-    <?=  Html::activeCheckboxList($model, 'staff',
-        ArrayHelper::map($staff, 'id', 'username'), array('class'=>'form-control'))
+    <?php if(Yii::$app->user->identity->role == 2) {?>
+        <?=  Html::activeCheckboxList($model, 'staff',
+            ArrayHelper::map($staff, 'id', 'username'), array('class'=>'form-control'))
+        ?>
+    <?php } else{ ?>
+    <?=  Html::activeDropDownList($model, 'project_manager',
+        ArrayHelper::map($projectManager, 'id', 'username'), array('class'=>'form-control','prompt'=>'Project Manager') )
     ?>
-
+    <?php }?>
     <?= $form->field($model, 'createDate')->widget(
 
         DateTimePicker::className(), [

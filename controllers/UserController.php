@@ -6,8 +6,10 @@ use Yii;
 use app\models\User;
 use app\models\UserSearch;
 use yii\web\Controller;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
+use app\models\PasswordForm;
 
 /**
  * UserController implements the CRUD actions for User model.
@@ -35,13 +37,17 @@ class UserController extends Controller
      */
     public function actionIndex()
     {
-        $searchModel = new UserSearch();
-        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        if (Yii::$app->user->identity->role == 1) {
+            $searchModel = new UserSearch();
+            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-        return $this->render('index', [
-            'searchModel' => $searchModel,
-            'dataProvider' => $dataProvider,
-        ]);
+            return $this->render('index', [
+                'searchModel' => $searchModel,
+                'dataProvider' => $dataProvider,
+            ]);
+        } else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**
@@ -52,10 +58,15 @@ class UserController extends Controller
      */
     public function actionView($id)
     {
-        return $this->render('view', [
-            'model' => $this->findModel($id),
-        ]);
+        if (Yii::$app->user->identity->role == 1 || Yii::$app->user->identity->id == $id) {
+            return $this->render('view', [
+                'model' => $this->findModel($id),
+            ]);
+        } else {
+            throw new ForbiddenHttpException;
+        }
     }
+
 
     /**
      * Creates a new User model.
@@ -64,22 +75,24 @@ class UserController extends Controller
      */
     public function actionCreate()
     {
-        $model = new User();
-        $model->load(Yii::$app->request->post());
+        if (Yii::$app->user->identity->role == 1) {
+            $model = new User();
+            $model->load(Yii::$app->request->post());
 
 
+            if ($model->load(Yii::$app->request->post())) {
+                $password = $_POST['User']['password'];
+                $model->password = Yii::$app->security->generatePasswordHash($password);
+                $model->save();
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
 
-
-        if ($model->load(Yii::$app->request->post()) ) {
-            $password =$_POST['User']['password'];
-            $model->password = Yii::$app->security->generatePasswordHash($password);
-            $model->save();
-            return $this->redirect(['view', 'id' => $model->id]);
+            return $this->render('create', [
+                'model' => $model,
+            ]);
+        } else {
+            throw new ForbiddenHttpException;
         }
-
-        return $this->render('create', [
-            'model' => $model,
-        ]);
     }
 
     /**
@@ -91,14 +104,18 @@ class UserController extends Controller
      */
     public function actionUpdate($id)
     {
-        $model = $this->findModel($id);
-        if ($model->load(Yii::$app->request->post()) && $model->save() ) {
-             return $this->redirect(['view', 'id' => $model->id]);
-        }
+        if (Yii::$app->user->identity->role == 1 || Yii::$app->user->identity->id == $id) {
+            $model = $this->findModel($id);
+            if ($model->load(Yii::$app->request->post()) && $model->save()) {
+                return $this->redirect(['view', 'id' => $model->id]);
+            }
 
-        return $this->render('update', [
-            'model' => $model,
-        ]);
+            return $this->render('update', [
+                'model' => $model,
+            ]);
+        } else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**
@@ -110,9 +127,15 @@ class UserController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
+        if (Yii::$app->user->identity->role == 1) {
+            if (Yii::$app->user->identity->id != $id) {
+                $this->findModel($id)->delete();
 
-        return $this->redirect(['index']);
+                return $this->redirect(['index']);
+            }
+        } else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**
@@ -129,5 +152,45 @@ class UserController extends Controller
         }
 
         throw new NotFoundHttpException('The requested page does not exist.');
+    }
+
+    public function actionChangePassword($id){
+        $model = new PasswordForm;
+        $userId = Yii::$app->user->identity->id;
+        $modeluser =  User::findOne($userId) ;
+
+        if($model->load(Yii::$app->request->post())){
+            if($model->validate()){
+                try{
+                    $modeluser->password = $_POST['PasswordForm']['newpass'];
+                    if($modeluser->save()){
+                        Yii::$app->getSession()->setFlash(
+                            'success','Password changed'
+                        );
+                        return $this->redirect(['index']);
+                    }else{
+                        Yii::$app->getSession()->setFlash(
+                            'error','Password not changed'
+                        );
+                        return $this->redirect(['index']);
+                    }
+                }catch(Exception $e){
+                    Yii::$app->getSession()->setFlash(
+                        'error',"{$e->getMessage()}"
+                    );
+                    return $this->render('changepassword',[
+                        'model'=>$model
+                    ]);
+                }
+            }else{
+                return $this->render('changepassword',[
+                    'model'=>$model
+                ]);
+            }
+        }else{
+            return $this->render('change-password',[
+                'model'=>$model
+            ]);
+        }
     }
 }

@@ -20,6 +20,7 @@ class Project extends \yii\db\ActiveRecord
      * {@inheritdoc}
      */
     public $staff;
+    public $project_manager;
     public static function tableName()
     {
         return 'project';

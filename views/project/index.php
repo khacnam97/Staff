@@ -16,7 +16,9 @@ $this->params['breadcrumbs'][] = $this->title;
     <h1><?= Html::encode($this->title) ?></h1>
 
     <p>
-        <?= Html::a('Create Project', ['create'], ['class' => 'btn btn-success']) ?>
+        <?php if(Yii::$app->user->identity->role !=3) { ?>
+            <?=  Html::a('Create Project', ['create'], ['class' => 'btn btn-success']) ?>
+        <?php }?>
     </p>
 
     <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
@@ -58,8 +60,26 @@ $this->params['breadcrumbs'][] = $this->title;
                     return '<a href="" title="" >Add staff</a>';
                 },
             ],
+            ['class' => 'yii\grid\ActionColumn',
+                'buttons'=>[
+                    'update'=>function ($url, $model) {
+                        if(Yii::$app->user->identity->role != 3){
+                            return Html::a('<span class="glyphicon glyphicon-pencil"></span>', ['project/update', 'id' => $model->id], ['class' => 'profile-link']);
 
-            ['class' => 'yii\grid\ActionColumn'],
+                        }
+                    },
+                    'delete'=>function ($url, $model) {
+                        if(Yii::$app->user->identity->role != 3){
+                            return Html::a('<span class="glyphicon glyphicon-trash"></span>', ['project/delete', 'id' => $model->id], ['class' => 'profile-link',  'title' => Yii::t('app', 'Delete'),'data-confirm' => Yii::t('yii', 'Are you sure you want to delete?'),
+                                'data-method' => 'post', 'data-pjax' => '0']);
+
+                        }
+                    },
+
+                ],
+            ],
+
+//            ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
 

@@ -15,6 +15,7 @@ class SignupForm extends Model
     public $username;
     public $email;
     public $password;
+    public $role;
     public $permission ;
 
     /**
@@ -50,6 +51,7 @@ class SignupForm extends Model
             $user->username = $this->username;
             $user->email = $this->email;
             $user->setPassword($this->password);
+            $user->role = $_POST['SignupForm']['role'];
             $user->save();
 
             // $permisstionList = $_POST['SignupForm']['permission'];

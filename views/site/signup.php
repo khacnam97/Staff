@@ -21,7 +21,9 @@ $this->params['breadcrumbs'][] = $this->title;
             <?= $form->field($model, 'username') ?>
             <?= $form->field($model, 'email') ?>
             <?= $form->field($model, 'password')->passwordInput() ?>
-           
+            <?=  Html::activeDropDownList($model, 'role',
+                array(1 => 'Admin', 2 => 'Project Manager', 3 => 'Staff'), ['prompt'=>'Role','class'=>'form-control'])
+            ?>
             <div class="form-group">
                 <?= Html::submitButton('Signup', ['class' => 'btn btn-primary dddd', 'name' => 'signup-button', 'id' => 'btnsign']) ?>
             </div>

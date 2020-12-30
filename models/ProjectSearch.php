@@ -2,9 +2,9 @@
 
 namespace app\models;
 
+use app\models\Project;
 use yii\base\Model;
 use yii\data\ActiveDataProvider;
-use app\models\Project;
 
 /**
  * ProjectSearch represents the model behind the search form of `app\models\Project`.
@@ -41,7 +41,14 @@ class ProjectSearch extends Project
     public function search($params)
     {
         $query = Project::find();
-//        $query = Project::find();
+        $role = \Yii::$app->user->identity->role;
+        $userId = \Yii::$app->user->identity->id;
+        if($role == 2) {
+            $query = Project::find()->where(['projectManagerId' => $userId]);
+        }
+        if($role == 3) {
+            $query = Project::find()->rightJoin('project_staff','project.id = project_staff.projectId')->where(['project_staff.userId' => $userId]);
+        }
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
@@ -53,7 +60,6 @@ class ProjectSearch extends Project
 
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
-            // $query->where('0=1');
             return $dataProvider;
         }
 
