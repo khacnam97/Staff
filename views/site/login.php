@@ -40,6 +40,6 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <div class="col-lg-offset-1" style="color:#999;">
         Rigister <?= Html::a('Signup', ['signup'], ['class' => '']) ?>.
-        To modify the username/password, please check out the code <code>app\models\User::$users</code>.
+        <?= Html::a('Forget Password', ['forget-password'], ['class' => '']) ?>.
     </div>
 </div>

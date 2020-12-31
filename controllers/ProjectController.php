@@ -69,8 +69,10 @@ class ProjectController extends Controller
      */
     public function actionIndex()
     {
-        if(Yii::$app->user->identity->role !=1){
+        if(Yii::$app->user->identity->role !=3){
             $searchModel = new ProjectSearch();
+            $model = new ProjectStaff();
+
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
             $staff =(new \yii\db\Query())->select('userId,projectId,user.username,GROUP_CONCAT(user.username) as nameStaff ')->from('project_staff')
                                          ->leftJoin('project' ,'project.id = project_staff.projectId')
@@ -78,7 +80,8 @@ class ProjectController extends Controller
             return $this->render('index', [
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
-                'staff' => $staff
+                'staff' => $staff,
+                'model' => $model
             ]);
         }
         else {
@@ -139,6 +142,25 @@ class ProjectController extends Controller
 
 
                 return $this->redirect(['view', 'id' => $model->id]);
+            }
+            if (Yii::$app->request->isAjax) {
+                $data = Yii::$app->request->post();
+                $projectId= $data['projectId'];
+                $StaffList = $data['userId'];
+                $countUserId = count($StaffList);
+                $a = $StaffList[0];
+                for ($i=0 ;$i<$countUserId ; $i++)
+                {
+                    $newProjectStaff = new ProjectStaff();
+                    $newProjectStaff->userId = $StaffList[$i];
+                    $newProjectStaff->projectId = $projectId ;
+                    $newProjectStaff->save();
+                }
+                \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
+                return [
+//                'search' => $search,
+                    'code' => 100,
+                ];
             }
 
             return $this->render('create', [

@@ -10,9 +10,7 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     // const STATUS_DELETED = 0;
     // const STATUS_ACTIVE = 10;
 
-    public $old_password ;
-    public $new_password;
-    public $repeat_password;
+
     /**
      * @inheritdoc
      */
@@ -23,9 +21,7 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     {
         return [
             [['role'], 'integer'],
-
             [['username', 'password', 'email', 'description'], 'string', 'max' => 255],
-//            [['old_password','new_password','repeat_password'], 'required']
         ];
     }
 
@@ -66,14 +62,6 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     //     ];
     // }
 
-//    public function findPasswords($attribute, $params){
-//        $userId = Yii::$app->user->id;
-//        $user = User::findOne($userId);
-//        $password = $user->password;
-//        $old_password = sha1($this->old_password);
-//        if($password!=$old_password)
-//            $this->addError($attribute,'Old password is incorrect');
-//    }
 
     /**
      * @inheritdoc
@@ -170,7 +158,7 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
      */
     public function generatePasswordResetToken()
     {
-        // $this->password_reset_token = Yii::$app->security->generateRandomString() . '_' . time();
+         $this->password_reset_token = Yii::$app->security->generateRandomString() . '_' . time();
     }
 
     /**
@@ -178,7 +166,7 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
      */
     public function removePasswordResetToken()
     {
-        // $this->password_reset_token = null;
+         $this->password_reset_token = null;
     }
 
     /**
@@ -187,16 +175,16 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
      * @param string $token password reset token
      * @return static|null
      */
-    // public static function findByPasswordResetToken($token) {
-    //     if (!static::isPasswordResetTokenValid($token)) {
-    //         return null;
-    //     }
+     public static function findByPasswordResetToken($token) {
+         if (!static::isPasswordResetTokenValid($token)) {
+             return null;
+         }
 
-    //     return static::findOne([
-    //         'password_reset_token' => $token,
-    //         // 'status' => self::STATUS_ACTIVE,
-    //     ]);
-    // }
+         return static::findOne([
+             'password_reset_token' => $token,
+             // 'status' => self::STATUS_ACTIVE,
+         ]);
+     }
 
     /**
      * Finds out if password reset token is valid
@@ -204,13 +192,13 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
      * @param string $token password reset token
      * @return boolean
      */
-    // public static function isPasswordResetTokenValid($token) {
-    //     if (empty($token)) {
-    //         return false;
-    //     }
-    //     $expire = Yii::$app->params['user.passwordResetTokenExpire'];
-    //     $parts = explode('_', $token);
-    //     $timestamp = (int) end($parts);
-    //     return $timestamp + $expire >= time();
-    // }
+//     public static function isPasswordResetTokenValid($token) {
+//         if (empty($token)) {
+//             return false;
+//         }
+//         $expire = Yii::$app->params['user.passwordResetTokenExpire'];
+//         $parts = explode('_', $token);
+//         $timestamp = (int) end($parts);
+//         return $timestamp + $expire >= time();
+//     }
 }
