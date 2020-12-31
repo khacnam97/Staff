@@ -162,7 +162,7 @@ class UserController extends Controller
         if($model->load(Yii::$app->request->post())){
             if($model->validate()){
                 try{
-                    $modeluser->password = $_POST['PasswordForm']['newpass'];
+                    $modeluser->password =Yii::$app->security->generatePasswordHash($_POST['PasswordForm']['new_password']);
                     if($modeluser->save()){
                         Yii::$app->getSession()->setFlash(
                             'success','Password changed'
@@ -178,12 +178,12 @@ class UserController extends Controller
                     Yii::$app->getSession()->setFlash(
                         'error',"{$e->getMessage()}"
                     );
-                    return $this->render('changepassword',[
+                    return $this->render('change-password',[
                         'model'=>$model
                     ]);
                 }
             }else{
-                return $this->render('changepassword',[
+                return $this->render('change-password',[
                     'model'=>$model
                 ]);
             }

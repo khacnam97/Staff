@@ -13,20 +13,23 @@ class PasswordForm extends Model{
     public function rules(){
         return [
             [['old_password','new_password','repeat_password'],'required'],
-            ['old_password','findPasswords'],
+            ['old_password','validatePassword'],
             ['repeat_password','compare','compareAttribute'=>'new_password'],
         ];
     }
 
-    public function findPasswords($attribute, $params){
-        $userId = Yii::$app->user->identity->id;
-        $user = User::findOne($userId) ;
-        $password = $user->password;
-        $a =Yii::$app->security->generatePasswordHash($this->old_password);
-        if($password!=$this->old_password)
-            $this->addError($attribute,'Old password is incorrect');
+    public function validatePassword($attribute, $params)
+    {
+        if (!$this->hasErrors()) {
+            $userId = Yii::$app->user->identity->id;
+            $user = User::findOne($userId) ;
+            $password = $user->password;
+            // Yii::$app->security->validatePassword($password, $this->password)
+            if ( !(Yii::$app->security->validatePassword($this->old_password, $password))) {
+                $this->addError($attribute, 'Incorrect username or password.');
+            }
+        }
     }
-
     public function attributeLabels(){
         return [
             'old_passord'=>'Old Password',
