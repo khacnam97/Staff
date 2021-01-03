@@ -14,6 +14,7 @@ class PasswordForm extends Model{
         return [
             [['old_password','new_password','repeat_password'],'required'],
             ['old_password','validatePassword'],
+            ['new_password', 'string', 'min' => 6],
             ['repeat_password','compare','compareAttribute'=>'new_password'],
         ];
     }

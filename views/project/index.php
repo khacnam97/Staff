@@ -2,14 +2,17 @@
 
 use yii\helpers\Html;
 use yii\grid\GridView;
-
+use yii\bootstrap\Modal;
+use yii\helpers\ArrayHelper;
+use app\models\User;
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\ProjectSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
 /* @var $staff  */
+/* @var $model app\models\ProjectStaff */
 $this->title = 'Projects';
 $this->params['breadcrumbs'][] = $this->title;
-//var_dump($staff);
+
 ?>
 <div class="project-index">
 
@@ -21,8 +24,9 @@ $this->params['breadcrumbs'][] = $this->title;
         <?php }?>
     </p>
 
-    <?php // echo $this->render('_search', ['model' => $searchModel]); ?>
-
+    <?= $this->render('_modal', [
+        'model' => $model,
+    ]) ?>
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
@@ -57,7 +61,16 @@ $this->params['breadcrumbs'][] = $this->title;
                 'class' => 'yii\grid\DataColumn',
                 'attribute'=>'Add Staff',
                 'value' => function ($data) {
-                    return '<a href="" title="" >Add staff</a>';
+
+                    return '<a  id="modal-btn" title="" class="btn btn-success" ><span class="glyphicon glyphicon-plus"></span></a>'. Html::input(
+                            'hidden',
+                            'title',
+                            $data->id,
+                            [
+                                'class' => 'form-control',
+                                'id' => 'rowId'
+                            ]
+                        );
                 },
             ],
             ['class' => 'yii\grid\ActionColumn',
@@ -65,7 +78,6 @@ $this->params['breadcrumbs'][] = $this->title;
                     'update'=>function ($url, $model) {
                         if(Yii::$app->user->identity->role != 3){
                             return Html::a('<span class="glyphicon glyphicon-pencil"></span>', ['project/update', 'id' => $model->id], ['class' => 'profile-link']);
-
                         }
                     },
                     'delete'=>function ($url, $model) {
@@ -79,9 +91,37 @@ $this->params['breadcrumbs'][] = $this->title;
                 ],
             ],
 
-//            ['class' => 'yii\grid\ActionColumn'],
         ],
     ]); ?>
-
-
 </div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>
+<script>
+    $('#modal-btn').on('click', function (event) {
+        $a= $("#rowId").val()
+        $("#projectId").val($a);
+        $('#modal-opened').modal('show');
+    });
+    $('#btn_add').on('click', function (event) {
+        var $arrId = [];
+        $.each($("input[name='iduser[]']:checked"), function(){
+            $arrId.push($(this).val());
+        });
+        console.log($arrId);
+        $.ajax({
+            url: '<?php echo Yii::$app->request->baseUrl. '/project/create' ?>',
+            type: 'post',
+            data: {
+                userId: $arrId,
+                projectId :$("#projectId").val() ,
+                _csrf : '<?=Yii::$app->request->getCsrfToken()?>'
+            },
+            success: function (data) {
+                $('#modal-opened').modal('hide');
+            }
+        });
+    });
+
+
+</script>

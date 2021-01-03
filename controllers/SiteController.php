@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\User;
 use Yii;
 use yii\filters\AccessControl;
 use yii\web\Controller;
@@ -10,6 +11,8 @@ use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
 use app\models\SignupForm;
+use app\models\ForgetPasswordForm;
+use app\models\PasswordResetForm;
 
 class SiteController extends Controller
 {
@@ -147,5 +150,42 @@ class SiteController extends Controller
     public function actionAbout()
     {
         return $this->render('about');
+    }
+    public function actionForgetPassword() {
+        $model = new ForgetPasswordForm();
+        $token = 'q';
+        if ($model->load(Yii::$app->request->post())){
+            $email= $_POST['ForgetPasswordForm']['email_forget'];
+            $emailData =(new \yii\db\Query())->select('email')->from('user')->all();
+            $emailPost['email'] =$email;
+            if(in_array($emailPost,$emailData)){
+                $token =(new \yii\db\Query())->select('password_reset_token')->from('user')->where(['email'=> $email])->one();
+                $tokenPass = $token['password_reset_token'];
+                Yii::$app->mailer->compose('mail-content', ['model' => $model, 'token' => $tokenPass])
+                    ->setFrom([\Yii::$app->params['senderEmail'] => 'Reset Pass'])
+                    ->setTo($email)
+                    ->setSubject('This is a reset password' )
+                    ->send();
+                return $this->redirect('site/login');
+            }
+            return $this->redirect('site/login' );
+        }
+        return $this->render('forget-password', [
+            'model' => $model
+        ]);
+    }
+    public function actionReset($token) {
+        $model = new PasswordResetForm();
+        if ($model->load(Yii::$app->request->post())){
+           $modeluser = User::findOne(['password_reset_token' => $token]);
+            if($modeluser){
+                $modeluser->password =  Yii::$app->security->generatePasswordHash($_POST['PasswordResetForm']['newpass']);
+                $modeluser->generatePasswordResetToken();
+                $modeluser->save();
+                return $this->redirect('login');
+            }
+            return $this->render('reset',['model' => $model]);
+        }
+        return $this->render('reset',['model' => $model]);
     }
 }

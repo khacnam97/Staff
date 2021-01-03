@@ -14,6 +14,7 @@ class ProjectSearch extends Project
     /**
      * {@inheritdoc}
      */
+    public $addStaff;
     public function rules()
     {
         return [
