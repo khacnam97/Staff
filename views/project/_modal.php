@@ -24,19 +24,8 @@ use yii\helpers\ArrayHelper;
     echo Html::activeCheckboxList($model, 'userId',
         ArrayHelper::map(User::find()->where(['role' => 3])->all(), 'id', 'username'),
         array('prompt'=>'---Select---','class'=>'form-control','id' => 'userId','name' =>'iduser'));
-    echo '<div class="form-group col-md-11">';
-    echo Html::input(
-        'hidden',
-        'title',
-        '',
-        [
-            'class' => 'form-control',
-            'id' => 'projectId'
-        ]
-    );
-    echo '</div>';
     echo Html::submitButton(
-        '<span class="glyphicon glyphicon-plus"></span>',
+        'ADD',
         [
             'class' => 'btn btn-success',
             'id' => 'btn_add'

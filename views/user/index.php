@@ -32,7 +32,17 @@ $this->params['breadcrumbs'][] = $this->title;
             'role',
             //'description',
 
-            ['class' => 'yii\grid\ActionColumn'],
+            ['class' => 'yii\grid\ActionColumn',
+                'buttons'=>[
+                    'delete'=>function ($url, $model) {
+                        if(Yii::$app->user->identity->id != $model->id){
+                            return Html::a('<span class="glyphicon glyphicon-trash"></span>', ['project/delete', 'id' => $model->id], ['class' => 'profile-link',  'title' => Yii::t('app', 'Delete'),'data-confirm' => Yii::t('yii', 'Are you sure you want to delete?'),
+                                'data-method' => 'post', 'data-pjax' => '0']);
+
+                        }
+                    },
+                ],
+            ],
         ],
     ]); ?>
 
