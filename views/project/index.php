@@ -27,9 +27,11 @@ $this->params['breadcrumbs'][] = $this->title;
     <?= $this->render('_modal', [
         'model' => $model,
     ]) ?>
+    <?php \yii\widgets\Pjax::begin(['id' => 'table-project']); ?>
     <?= GridView::widget([
         'dataProvider' => $dataProvider,
         'filterModel' => $searchModel,
+        'id' => 'table-project',
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
 
@@ -55,22 +57,18 @@ $this->params['breadcrumbs'][] = $this->title;
                     return '<a href="" title="" ></a>';
                 },
             ],
+
             [
                 'format' => 'raw',
 //                'format' => 'html',
                 'class' => 'yii\grid\DataColumn',
                 'attribute'=>'Add Staff',
+                'visible' => Yii::$app->user->can('manager'),
                 'value' => function ($data) {
+                    if (Yii::$app->user->identity->role != 3){
+                        return '<a   title="" class="btn btn-success modal-btn" ><span class="glyphicon glyphicon-plus"></span></a>';
+                    }
 
-                    return '<a  id="modal-btn" title="" class="btn btn-success" ><span class="glyphicon glyphicon-plus"></span></a>'. Html::input(
-                            'hidden',
-                            'title',
-                            $data->id,
-                            [
-                                'class' => 'form-control',
-                                'id' => 'rowId'
-                            ]
-                        );
                 },
             ],
             ['class' => 'yii\grid\ActionColumn',
@@ -93,14 +91,16 @@ $this->params['breadcrumbs'][] = $this->title;
 
         ],
     ]); ?>
+    <?php \yii\widgets\Pjax::end(); ?>
 </div>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 <script>
-    $('#modal-btn').on('click', function (event) {
-        $a= $("#rowId").val()
-        $("#projectId").val($a);
+    var projectId ;
+    $('.modal-btn').on('click', function (event) {
+         projectId =$(this).parents('tr').data('key');
+         console.log(projectId);
         $('#modal-opened').modal('show');
     });
     $('#btn_add').on('click', function (event) {
@@ -108,17 +108,17 @@ $this->params['breadcrumbs'][] = $this->title;
         $.each($("input[name='iduser[]']:checked"), function(){
             $arrId.push($(this).val());
         });
-        console.log($arrId);
         $.ajax({
             url: '<?php echo Yii::$app->request->baseUrl. '/project/create' ?>',
             type: 'post',
             data: {
                 userId: $arrId,
-                projectId :$("#projectId").val() ,
+                projectId :projectId ,
                 _csrf : '<?=Yii::$app->request->getCsrfToken()?>'
             },
             success: function (data) {
                 $('#modal-opened').modal('hide');
+                $.pjax.reload({container: '#table-project'});
             }
         });
     });

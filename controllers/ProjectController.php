@@ -30,36 +30,36 @@ class ProjectController extends Controller
                     'delete' => ['POST'],
                 ],
             ],
-            // 'access' => [
-            //     'class' => AccessControl::className(),
-            //     'rules' => [
-            //         [
-            //             'allow' => true,
-            //             'actions' => ['index'],
-            //             'roles' => ['@'],
-            //         ],
-            //         [
-            //             'allow' => true,
-            //             'actions' => ['view'],
-            //             'roles' => [1],
-            //         ],
-            //         [
-            //             'allow' => true,
-            //             'actions' => ['create'],
-            //             'roles' => [1],
-            //         ],
-            //         [
-            //             'allow' => true,
-            //             'actions' => ['update'],
-            //             'roles' => [1],
-            //         ],
-            //         [
-            //             'allow' => true,
-            //             'actions' => ['delete'],
-            //             'roles' => [1],
-            //         ],
-            //     ],
-            // ],
+             'access' => [
+                 'class' => AccessControl::className(),
+                 'rules' => [
+                     [
+                         'allow' => true,
+                         'actions' => ['index'],
+                         'roles' => ['staff'],
+                     ],
+                     [
+                         'allow' => true,
+                         'actions' => ['view'],
+                         'roles' => ['staff'],
+                     ],
+                     [
+                         'allow' => true,
+                         'actions' => ['create'],
+                         'roles' => ['manager'],
+                     ],
+                     [
+                         'allow' => true,
+                         'actions' => ['update'],
+                         'roles' => ['manager'],
+                     ],
+                     [
+                         'allow' => true,
+                         'actions' => ['delete'],
+                         'roles' => ['manager'],
+                     ],
+                 ],
+             ],
         ];
     }
 
@@ -69,7 +69,7 @@ class ProjectController extends Controller
      */
     public function actionIndex()
     {
-        if(Yii::$app->user->identity->role !=3){
+//        if(Yii::$app->user->identity->role !=3){
             $searchModel = new ProjectSearch();
             $model = new ProjectStaff();
 
@@ -83,10 +83,10 @@ class ProjectController extends Controller
                 'staff' => $staff,
                 'model' => $model
             ]);
-        }
-        else {
-            throw new ForbiddenHttpException;
-        }
+//        }
+//        else {
+//            throw new ForbiddenHttpException;
+//        }
     }
 
     /**
@@ -97,9 +97,16 @@ class ProjectController extends Controller
      */
     public function actionView($id)
     {
-        return $this->render('view', [
-            'model' => $this->findModel($id),
-        ]);
+        $userId['userId'] = Yii::$app->user->identity->id;
+        $staffId = (new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
+        if(Yii::$app->user->identity->role != 3 || in_array($userId,$staffId)){
+            return $this->render('view', [
+                'model' => $this->findModel($id),
+            ]);
+        }
+        else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     public function action($id)
@@ -116,9 +123,10 @@ class ProjectController extends Controller
      */
     public function actionCreate()
     {
-        if(Yii::$app->user->identity->role !=3){
+//        if(Yii::$app->user->identity->role !=3){
             $model = new Project();
             $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
+
             $projectManager =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 2])->all();
             if ($model->load(Yii::$app->request->post()) ) {
                 if (Yii::$app->user->identity->role == 1){
@@ -147,14 +155,19 @@ class ProjectController extends Controller
                 $data = Yii::$app->request->post();
                 $projectId= $data['projectId'];
                 $StaffList = $data['userId'];
+                $staffId = (new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $projectId])->all();
                 $countUserId = count($StaffList);
-                $a = $StaffList[0];
+
                 for ($i=0 ;$i<$countUserId ; $i++)
                 {
-                    $newProjectStaff = new ProjectStaff();
-                    $newProjectStaff->userId = $StaffList[$i];
-                    $newProjectStaff->projectId = $projectId ;
-                    $newProjectStaff->save();
+                    $idStaff['userId'] = $StaffList[$i];
+                    if(!in_array($idStaff,$staffId)){
+                        $newProjectStaff = new ProjectStaff();
+                        $newProjectStaff->userId = $StaffList[$i];
+                        $newProjectStaff->projectId = $projectId ;
+                        $newProjectStaff->save();
+                    }
+
                 }
                 \Yii::$app->response->format = \yii\web\Response::FORMAT_JSON;
                 return [
@@ -168,10 +181,10 @@ class ProjectController extends Controller
                 'staff' => $staff,
                 'projectManager' => $projectManager
             ]);
-        }
-        else{
-            throw new ForbiddenHttpException;
-        }
+//        }
+//        else{
+//            throw new ForbiddenHttpException;
+//        }
 
     }
 
@@ -184,7 +197,7 @@ class ProjectController extends Controller
      */
     public function actionUpdate($id)
     {
-        if(Yii::$app->user->identity->role !=3){
+//        if(Yii::$app->user->identity->role !=3){
             $model = $this->findModel($id);
             $staff =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
             $staffId = (new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
@@ -223,10 +236,10 @@ class ProjectController extends Controller
                 'projectStaff' => $projectStaff,
                 'projectManager' => $projectManager
             ]);
-        }
-        else{
-            throw new ForbiddenHttpException;
-        }
+//        }
+//        else{
+//            throw new ForbiddenHttpException;
+//        }
     }
 
     /**
@@ -238,13 +251,13 @@ class ProjectController extends Controller
      */
     public function actionDelete($id)
     {
-        if(Yii::$app->user->identity->role !=3){
+//        if(Yii::$app->user->identity->role !=3){
             $this->findModel($id)->delete();
             return $this->redirect(['index']);
-        }
-        else{
-            throw new ForbiddenHttpException;
-        }
+//        }
+//        else{
+//            throw new ForbiddenHttpException;
+//        }
     }
 
     /**

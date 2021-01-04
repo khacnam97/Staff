@@ -3,6 +3,7 @@
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
 use kartik\datetime\DateTimePicker;
+use kartik\date\DatePicker;
 use yii\helpers\ArrayHelper;
 /* @var $this yii\web\View */
 /* @var $model app\models\Project */
@@ -37,13 +38,8 @@ use yii\helpers\ArrayHelper;
         'convertFormat' => true,
 
         'pluginOptions' => [
-
-            'format' => 'yyyy/dd/mm hh:i:ss',
-
-            'startDate' => '01-Mar-2014 12:00 AM',
-
+            'format' => 'yyyy-M-dd hh:i:ss',
             'todayHighlight' => true
-
         ]
     ]); ?>
     <?= $form->field($model, 'updateDate')->widget(
@@ -56,7 +52,7 @@ use yii\helpers\ArrayHelper;
 
         'pluginOptions' => [
 
-            'format' => 'yyyy/dd/mm hh:i:ss',
+            'format' => 'yyyy-M-dd hh:i:ss',
 
             'startDate' => '01-Jul-2017 12:00 AM',
 

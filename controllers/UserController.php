@@ -5,6 +5,7 @@ namespace app\controllers;
 use Yii;
 use app\models\User;
 use app\models\UserSearch;
+use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
@@ -28,6 +29,36 @@ class UserController extends Controller
                     'delete' => ['POST'],
                 ],
             ],
+            'access' => [
+                'class' => AccessControl::className(),
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['index'],
+                        'roles' => ['admin'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['view'],
+                        'roles' => ['staff'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['admin'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['staff'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete'],
+                        'roles' => ['admin'],
+                    ],
+                ],
+            ],
         ];
     }
 
@@ -37,7 +68,6 @@ class UserController extends Controller
      */
     public function actionIndex()
     {
-        if (Yii::$app->user->identity->role == 1) {
             $searchModel = new UserSearch();
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
@@ -45,9 +75,6 @@ class UserController extends Controller
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
             ]);
-        } else {
-            throw new ForbiddenHttpException;
-        }
     }
 
     /**
@@ -75,7 +102,6 @@ class UserController extends Controller
      */
     public function actionCreate()
     {
-        if (Yii::$app->user->identity->role == 1) {
             $model = new User();
             $model->load(Yii::$app->request->post());
 
@@ -90,9 +116,6 @@ class UserController extends Controller
             return $this->render('create', [
                 'model' => $model,
             ]);
-        } else {
-            throw new ForbiddenHttpException;
-        }
     }
 
     /**
@@ -127,14 +150,9 @@ class UserController extends Controller
      */
     public function actionDelete($id)
     {
-        if (Yii::$app->user->identity->role == 1) {
-            if (Yii::$app->user->identity->id != $id) {
-                $this->findModel($id)->delete();
-
-                return $this->redirect(['index']);
-            }
-        } else {
-            throw new ForbiddenHttpException;
+        if (Yii::$app->user->identity->id != $id) {
+            $this->findModel($id)->delete();
+            return $this->redirect(['index']);
         }
     }
 
