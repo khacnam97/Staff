@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\Project;
 use Yii;
 use app\models\User;
 use app\models\UserSearch;
@@ -57,6 +58,16 @@ class UserController extends Controller
                         'actions' => ['delete'],
                         'roles' => ['admin'],
                     ],
+                    [
+                        'allow' => true,
+                        'actions' => ['change-password'],
+                        'roles' => ['@'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['chart-month'],
+                        'roles' => ['admin'],
+                    ],
                 ],
             ],
         ];
@@ -104,15 +115,20 @@ class UserController extends Controller
     {
             $model = new User();
             $model->load(Yii::$app->request->post());
-
-
             if ($model->load(Yii::$app->request->post())) {
-                $password = $_POST['User']['password'];
-                $model->password = Yii::$app->security->generatePasswordHash($password);
-                $model->save();
-                return $this->redirect(['view', 'id' => $model->id]);
-            }
 
+                if($model->validate()) {
+                    $password = $_POST['User']['password'];
+                    $model->password = Yii::$app->security->generatePasswordHash($password);
+                    $model->save();
+                    return $this->redirect(['view', 'id' => $model->id]);
+                }
+                else{
+                    return $this->render('create', [
+                        'model' => $model,
+                    ]);
+                }
+            }
             return $this->render('create', [
                 'model' => $model,
             ]);
@@ -178,6 +194,7 @@ class UserController extends Controller
         $modeluser =  User::findOne($userId) ;
 
         if($model->load(Yii::$app->request->post())){
+            $a = $model->validate();
             if($model->validate()){
                 try{
                     $modeluser->password =Yii::$app->security->generatePasswordHash($_POST['PasswordForm']['new_password']);
@@ -210,5 +227,15 @@ class UserController extends Controller
                 'model'=>$model
             ]);
         }
+    }
+    public function actionChartMonth()
+    {
+        $projects = (new \yii\db\Query())->select('*, ')->from('project')->groupBy('year(createDate),month(createDate),date(createDate)')->all();
+        $data = [];
+        foreach ($projects as $project){
+
+        }
+
+        return $this->render('chart-month');
     }
 }

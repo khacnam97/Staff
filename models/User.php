@@ -7,9 +7,6 @@ use yii\behaviors\TimestampBehavior;
 
 class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
 {
-    // const STATUS_DELETED = 0;
-    // const STATUS_ACTIVE = 10;
-
 
     /**
      * @inheritdoc
@@ -21,7 +18,13 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     {
         return [
             [['role'], 'integer'],
+            ['username', 'filter', 'filter' => 'trim'],
             [['username', 'password', 'email', 'description'], 'string', 'max' => 255],
+            [['username', 'password', 'email','role'], 'required'],
+            ['username', 'unique',  'message' => 'This username has already been taken.'],
+            ['username', 'string', 'min' => 2, 'max' => 255],
+            ['email', 'email'],
+            ['email', 'unique',  'message' => 'This email address has already been taken.'],
         ];
     }
 
@@ -51,17 +54,6 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
             // TimestampBehavior::className(),
         ];
     }
-
-    /**
-     * @inheritdoc
-     */
-    // public function rules() {
-    //     return [
-    //         ['status', 'default', 'value' => self::STATUS_ACTIVE],
-    //         ['status', 'in', 'range' => [self::STATUS_ACTIVE, self::STATUS_DELETED]],
-    //     ];
-    // }
-
 
     /**
      * @inheritdoc
