@@ -6,6 +6,8 @@ use yii\helpers\Html;
 /* @var $model app\models\Project */
 /* @var $staff app\models\Project */
 /* @var $projectManager */
+/* @var $staffId */
+/* @var $staffs  */
 
 $this->title = 'Update Project: ' . $model->name;
 $this->params['breadcrumbs'][] = ['label' => 'Projects', 'url' => ['index']];
@@ -18,8 +20,10 @@ $this->params['breadcrumbs'][] = 'Update';
 
     <?= $this->render('_form', [
         'model' => $model,
-        'staff' => $staff,
+        'staffs' => $staffs,
         'projectManager' => $projectManager
     ]) ?>
-
 </div>
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.5.1.js"></script>

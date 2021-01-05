@@ -25,7 +25,6 @@ class PasswordForm extends Model{
             $userId = Yii::$app->user->identity->id;
             $user = User::findOne($userId) ;
             $password = $user->password;
-            // Yii::$app->security->validatePassword($password, $this->password)
             if ( !(Yii::$app->security->validatePassword($this->old_password, $password))) {
                 $this->addError($attribute, 'Incorrect username or password.');
             }

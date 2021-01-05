@@ -12,7 +12,7 @@ use app\models\User;
 /* @var $model app\models\ProjectStaff */
 $this->title = 'Projects';
 $this->params['breadcrumbs'][] = $this->title;
-
+//$this->registerJsFile( '@web/js/projectJs.js' );
 ?>
 <div class="project-index">
 
@@ -50,9 +50,9 @@ $this->params['breadcrumbs'][] = $this->title;
                 'value' => function ($data) use ($staff){
                     foreach ($staff as $staffs) {
 
-                       if($staffs['projectId'] == $data->id){
-                           return $staffs['nameStaff'];
-                       }
+                        if($staffs['projectId'] == $data->id){
+                            return $staffs['nameStaff'];
+                        }
                     }
                     return '<a href="" title="" ></a>';
                 },
@@ -66,7 +66,6 @@ $this->params['breadcrumbs'][] = $this->title;
                 'visible' => Yii::$app->user->can('manager'),
                 'value' => function ($data) {
                     if (Yii::$app->user->identity->role != 3){
-                        // return '<a   title="" class="btn btn-success modal-btn" ><span class="glyphicon glyphicon-plus"></span></a>';
                         return Html::a('<span class="glyphicon glyphicon-plus"></span>','#', [
                             'id' => 'activity-view-link',
                             'class' => 'btn btn-success modal-btn',
@@ -74,12 +73,12 @@ $this->params['breadcrumbs'][] = $this->title;
                             'data-target' => '#activity-modal',
                             'pjax-container' => 'table-project',
                             'data-pjax' => '0',
-     
+
                         ]);
                     }
 
                 },
-                
+
             ],
             ['class' => 'yii\grid\ActionColumn',
                 'buttons'=>[
@@ -108,11 +107,12 @@ $this->params['breadcrumbs'][] = $this->title;
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 <script>
     var projectId ;
-        $("#table-project").on('click', ".modal-btn", function(e){
-            projectId =$(this).parents('tr').data('key');
-            $('#modal-opened').modal('show');
-        });
-   
+    $("#table-project").on('click', ".modal-btn", function(e){
+        projectId =$(this).parents('tr').data('key');
+
+        $('#modal-opened').modal('show');
+    });
+
     $('#btn_add').on('click', function (event) {
         var $arrId = [];
         $.each($("input[name='iduser[]']:checked"), function(){

@@ -35,6 +35,7 @@ class Project extends \yii\db\ActiveRecord
             [['projectManagerId'], 'integer'],
             [['createDate', 'updateDate'], 'safe'],
             [['name', 'description'], 'string', 'max' => 255],
+            ['name', 'required'],
 
         ];
     }
