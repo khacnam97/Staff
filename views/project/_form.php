@@ -8,8 +8,9 @@ use yii\helpers\ArrayHelper;
 /* @var $this yii\web\View */
 /* @var $model app\models\Project */
 /* @var $form yii\widgets\ActiveForm */
-/* @var $staff */
+/* @var $staffs */
 /* @var $projectManager */
+/* @var $staffId */
 ?>
 
 <div class="project-form">
@@ -20,9 +21,9 @@ use yii\helpers\ArrayHelper;
 
     <?= $form->field($model, 'description')->textInput(['maxlength' => true]) ?>
 
-    <?php if(Yii::$app->user->identity->role == 2) {?>
+    <?php if(Yii::$app->user->identity->role == 2) { ?>
         <?=  Html::activeCheckboxList($model, 'staff',
-            ArrayHelper::map($staff, 'id', 'username'), array('class'=>'form-control'))
+            ArrayHelper::map($staffs, 'id', 'username'), array('class'=>'form-control'))
         ?>
     <?php } else{ ?>
     <?=  Html::activeDropDownList($model, 'project_manager',

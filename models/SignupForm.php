@@ -56,14 +56,20 @@ class SignupForm extends Model
             $user->role = $_POST['SignupForm']['role'];
             $user->save();
 
-            // $permisstionList = $_POST['SignupForm']['permission'];
-            // foreach ($permisstionList as $value)
-            // {
-            //     $newPermisstion = new AuthAssignment();
-            //     $newPermisstion->user_id = $user->id;
-            //     $newPermisstion->item_name = $value ;
-            //     $newPermisstion->save();
-            // }
+             $permisstionId = $_POST['SignupForm']['role'];
+             if($permisstionId == 1){
+                 $itemName = "admin";
+             }
+             elseif($permisstionId == 2){
+                 $itemName = "manager";
+             }
+             else{
+                 $itemName = "staff";
+             }
+                 $newPermisstion = new AuthAssignment();
+                 $newPermisstion->user_id = $user->id;
+                 $newPermisstion->item_name = $itemName ;
+                 $newPermisstion->save();
             return $user;
         }
 
