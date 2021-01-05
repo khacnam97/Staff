@@ -66,10 +66,20 @@ $this->params['breadcrumbs'][] = $this->title;
                 'visible' => Yii::$app->user->can('manager'),
                 'value' => function ($data) {
                     if (Yii::$app->user->identity->role != 3){
-                        return '<a   title="" class="btn btn-success modal-btn" ><span class="glyphicon glyphicon-plus"></span></a>';
+                        // return '<a   title="" class="btn btn-success modal-btn" ><span class="glyphicon glyphicon-plus"></span></a>';
+                        return Html::a('<span class="glyphicon glyphicon-plus"></span>','#', [
+                            'id' => 'activity-view-link',
+                            'class' => 'btn btn-success modal-btn',
+                            'data-toggle' => 'modal',
+                            'data-target' => '#activity-modal',
+                            'pjax-container' => 'table-project',
+                            'data-pjax' => '0',
+     
+                        ]);
                     }
 
                 },
+                
             ],
             ['class' => 'yii\grid\ActionColumn',
                 'buttons'=>[
@@ -98,11 +108,11 @@ $this->params['breadcrumbs'][] = $this->title;
 <script src="https://code.jquery.com/jquery-3.5.1.js"></script>
 <script>
     var projectId ;
-    $('.modal-btn').on('click', function (event) {
-         projectId =$(this).parents('tr').data('key');
-         console.log(projectId);
-        $('#modal-opened').modal('show');
-    });
+        $("#table-project").on('click', ".modal-btn", function(e){
+            projectId =$(this).parents('tr').data('key');
+            $('#modal-opened').modal('show');
+        });
+   
     $('#btn_add').on('click', function (event) {
         var $arrId = [];
         $.each($("input[name='iduser[]']:checked"), function(){
@@ -118,10 +128,9 @@ $this->params['breadcrumbs'][] = $this->title;
             },
             success: function (data) {
                 $('#modal-opened').modal('hide');
-                $.pjax.reload({container: '#table-project'});
+                $.pjax.reload({container:'#table-project', timeout: false});
             }
         });
     });
-
 
 </script>
