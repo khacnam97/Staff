@@ -230,12 +230,17 @@ class UserController extends Controller
     }
     public function actionChartMonth()
     {
-        $projects = (new \yii\db\Query())->select('*, ')->from('project')->groupBy('year(createDate),month(createDate),date(createDate)')->all();
-        $data = [];
+        $projects = (new \yii\db\Query())->select('createDate , count(*) as count_project')->from('project')->groupBy('year(createDate),month(createDate),date(createDate)')->orderBy(['createDate' => SORT_ASC])->all();
+        
+        $countData = count($projects);
+        $dataProject =[];
+       
         foreach ($projects as $project){
-
+            $data = [];
+                array_push($data,$project['createDate']);
+                array_push($data,$project['count_project']);
+                array_push($dataProject,$data);
         }
-
-        return $this->render('chart-month');
+        return $this->render('chart-month',['dataProject' => $dataProject]);
     }
 }
