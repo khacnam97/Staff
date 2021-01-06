@@ -3,7 +3,6 @@ namespace app\models;
 
 
 use app\models;
-use app\models\AuthAssignment;
 use yii\base\Model;
 use Yii;
 
@@ -16,7 +15,6 @@ class SignupForm extends Model
     public $email;
     public $password;
     public $role;
-    public $permission ;
 
     /**
      * @inheritdoc
@@ -48,31 +46,27 @@ class SignupForm extends Model
     public function signup()
     {
         if ($this->validate()) {
-            $user = new User();
-            $user->username = $this->username;
-            $user->email = $this->email;
-            $user->setPassword($this->password);
-            $user->generatePasswordResetToken();
-            $user->role = $_POST['SignupForm']['role'];
-            $user->save();
+            $transaction =Yii::$app->db->beginTransaction();
+            try {
+                $user = new User();
+                $user->username = $this->username;
+                $user->email = $this->email;
+                $user->setPassword($this->password);
+                $user->generatePasswordResetToken();
+                $user->save(false);
+                $permisstionId = $_POST['SignupForm']['role'];
+                $auth = \Yii::$app->authManager;
+                $authorRole = $auth->getRole($permisstionId);
 
-             $permisstionId = $_POST['SignupForm']['role'];
-             if($permisstionId == 1){
-                 $itemName = "admin";
-             }
-             elseif($permisstionId == 2){
-                 $itemName = "manager";
-             }
-             else{
-                 $itemName = "staff";
-             }
-                 $newPermisstion = new AuthAssignment();
-                 $newPermisstion->user_id = $user->id;
-                 $newPermisstion->item_name = $itemName ;
-                 $newPermisstion->save();
-            return $user;
+                $auth->assign($authorRole, $user->getId());
+                $transaction->commit();
+                return $user;
+            }
+            catch(Exception $e)
+            {
+                $transaction->rollBack();
+            }
         }
-
         return null;
     }
 }

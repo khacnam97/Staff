@@ -2,7 +2,7 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-
+use yii\helpers\ArrayHelper;
 /* @var $this yii\web\View */
 /* @var $model app\models\User */
 /* @var $form yii\widgets\ActiveForm */
@@ -19,8 +19,9 @@ use yii\widgets\ActiveForm;
     <?= $form->field($model, 'email')->textInput(['maxlength' => true]) ?>
 
     <div class="form-group">
+        <label class="control-label">Role</label>
         <?=  Html::activeDropDownList($model, 'role',
-            array(1 => 'Admin', 2 => 'Project Manager', 3 => 'Staff'), ['class'=>'form-control'])
+            ArrayHelper::map(Yii::$app->authManager->getRoles(), 'name', 'name'), array('class'=>'form-control'))
         ?>
     </div>
     <?= $form->field($model, 'description')->textInput(['maxlength' => true]) ?>

@@ -29,9 +29,6 @@ $this->params['breadcrumbs'][] = $this->title;
             'id',
             'username',
             'email:email',
-            'role',
-            //'description',
-
             ['class' => 'yii\grid\ActionColumn',
                 'buttons'=>[
                     'delete'=>function ($url, $model) {
