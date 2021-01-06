@@ -22,45 +22,21 @@ use yii\helpers\ArrayHelper;
     <?= $form->field($model, 'description')->textInput(['maxlength' => true]) ?>
 
     <?php if(Yii::$app->user->identity->role == 2) { ?>
-        <?=  Html::activeCheckboxList($model, 'staff',
-            ArrayHelper::map($staffs, 'id', 'username'), array('class'=>'form-control'))
-        ?>
+        <div class="form-group">
+            <label class="control-label">Staff</label>
+            <?=  Html::activeCheckboxList($model, 'staff',
+                ArrayHelper::map($staffs, 'id', 'username'), array('class'=>'form-control'))
+            ?>
+        </div>
     <?php } else{ ?>
-    <?=  Html::activeDropDownList($model, 'project_manager',
-        ArrayHelper::map($projectManager, 'id', 'username'), array('class'=>'form-control','prompt'=>'Project Manager') )
-    ?>
+    <div class="form-group">
+        <label class="control-label">Project Manager</label>
+            <?=  Html::activeDropDownList($model, 'project_manager',
+                ArrayHelper::map($projectManager, 'id', 'username'), array('class'=>'form-control') )
+            ?>
+    </div>
     <?php }?>
-    <?= $form->field($model, 'createDate')->widget(
 
-        DateTimePicker::className(), [
-
-        'options' => ['placeholder' => 'Select rendering time ...'],
-
-        'convertFormat' => true,
-
-        'pluginOptions' => [
-            'format' => 'yyyy-M-dd hh:i:ss',
-            'todayHighlight' => true
-        ]
-    ]); ?>
-    <?= $form->field($model, 'updateDate')->widget(
-
-        DateTimePicker::className(), [
-
-        'options' => ['placeholder' => 'Select rendering time ...'],
-
-        'convertFormat' => true,
-
-        'pluginOptions' => [
-
-            'format' => 'yyyy-M-dd hh:i:ss',
-
-            'startDate' => '01-Jul-2017 12:00 AM',
-
-            'todayHighlight' => true
-
-        ]
-    ]); ?>
 
     <div class="form-group">
         <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>

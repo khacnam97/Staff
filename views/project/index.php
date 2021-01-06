@@ -34,14 +34,10 @@ $this->params['breadcrumbs'][] = $this->title;
         'id' => 'table-project',
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-
             'id',
             'name',
             'username',
             'description',
-            'createDate',
-            'updateDate',
-
             [
                 'format' => 'raw',
 //                'format' => 'html',
@@ -54,7 +50,7 @@ $this->params['breadcrumbs'][] = $this->title;
                             return $staffs['nameStaff'];
                         }
                     }
-                    return '<a href="" title="" ></a>';
+                    return '';
                 },
             ],
 

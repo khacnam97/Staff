@@ -17,10 +17,9 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
     public function rules()
     {
         return [
-            [['role'], 'integer'],
             ['username', 'filter', 'filter' => 'trim'],
             [['username', 'password', 'email', 'description'], 'string', 'max' => 255],
-            [['username', 'password', 'email','role'], 'required'],
+            [['username', 'password', 'email'], 'required'],
             ['username', 'unique',  'message' => 'This username has already been taken.'],
             ['username', 'string', 'min' => 2, 'max' => 255],
             ['email', 'email'],
@@ -38,7 +37,6 @@ class User extends \yii\db\ActiveRecord  implements \yii\web\IdentityInterface
             'username' => 'Username',
             'password' => 'Password',
             'email' => 'Email',
-            'role' => 'Role',
             'description' => 'Description',
             'old_password' => 'Old Password',
             'repeat_password' => 'Repeat Password',

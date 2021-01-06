@@ -2,6 +2,8 @@
 
 namespace app\controllers;
 
+use app\models\AuthAssignment;
+use app\models\AuthItem;
 use app\models\Project;
 use Yii;
 use app\models\User;
@@ -35,38 +37,18 @@ class UserController extends Controller
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['index'],
+                        'actions' => ['index','create','delete','chart-month'],
                         'roles' => ['admin'],
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['view'],
+                        'actions' => ['view','update'],
                         'roles' => ['staff'],
-                    ],
-                    [
-                        'allow' => true,
-                        'actions' => ['create'],
-                        'roles' => ['admin'],
-                    ],
-                    [
-                        'allow' => true,
-                        'actions' => ['update'],
-                        'roles' => ['staff'],
-                    ],
-                    [
-                        'allow' => true,
-                        'actions' => ['delete'],
-                        'roles' => ['admin'],
                     ],
                     [
                         'allow' => true,
                         'actions' => ['change-password'],
                         'roles' => ['@'],
-                    ],
-                    [
-                        'allow' => true,
-                        'actions' => ['chart-month'],
-                        'roles' => ['admin'],
                     ],
                 ],
             ],
@@ -79,13 +61,13 @@ class UserController extends Controller
      */
     public function actionIndex()
     {
-            $searchModel = new UserSearch();
-            $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
+        $searchModel = new UserSearch();
+        $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
 
-            return $this->render('index', [
-                'searchModel' => $searchModel,
-                'dataProvider' => $dataProvider,
-            ]);
+        return $this->render('index', [
+            'searchModel' => $searchModel,
+            'dataProvider' => $dataProvider,
+        ]);
     }
 
     /**
@@ -96,12 +78,12 @@ class UserController extends Controller
      */
     public function actionView($id)
     {
-        if (Yii::$app->user->identity->role == 1 || Yii::$app->user->identity->id == $id) {
+        if (\Yii::$app->user->can('admin') || Yii::$app->user->identity->id == $id) {
             return $this->render('view', [
                 'model' => $this->findModel($id),
             ]);
         } else {
-            throw new ForbiddenHttpException;
+            throw new NotFoundHttpException;
         }
     }
 
@@ -116,12 +98,28 @@ class UserController extends Controller
             $model = new User();
             $model->load(Yii::$app->request->post());
             if ($model->load(Yii::$app->request->post())) {
-
                 if($model->validate()) {
-                    $password = $_POST['User']['password'];
-                    $model->password = Yii::$app->security->generatePasswordHash($password);
-                    $model->save();
-                    return $this->redirect(['view', 'id' => $model->id]);
+                    $transaction =Yii::$app->db->beginTransaction();
+                    try {
+                        $password = $_POST['User']['password'];
+                        $model->password = Yii::$app->security->generatePasswordHash($password);
+                        $model->save();
+
+                        $permisstionId = $_POST['User']['role'];
+                        $auth = \Yii::$app->authManager;
+                        $authorRole = $auth->getRole($permisstionId);
+                        $auth->assign($authorRole, $model->getId());
+                        $transaction->commit();
+                        return $this->redirect(['view', 'id' => $model->id]);
+                    }
+                    catch(Exception $e)
+                    {
+                        $transaction->rollBack();
+                        return $this->render('create', [
+                            'model' => $model,
+                        ]);
+                    }
+
                 }
                 else{
                     return $this->render('create', [
@@ -129,6 +127,7 @@ class UserController extends Controller
                     ]);
                 }
             }
+            $model->id ='';
             return $this->render('create', [
                 'model' => $model,
             ]);
@@ -143,12 +142,11 @@ class UserController extends Controller
      */
     public function actionUpdate($id)
     {
-        if (Yii::$app->user->identity->role == 1 || Yii::$app->user->identity->id == $id) {
+        if (\Yii::$app->user->can('admin') || Yii::$app->user->identity->id == $id) {
             $model = $this->findModel($id);
             if ($model->load(Yii::$app->request->post()) && $model->save()) {
                 return $this->redirect(['view', 'id' => $model->id]);
             }
-
             return $this->render('update', [
                 'model' => $model,
             ]);
@@ -231,16 +229,21 @@ class UserController extends Controller
     public function actionChartMonth()
     {
         $projects = (new \yii\db\Query())->select('createDate , count(*) as count_project')->from('project')->groupBy('year(createDate),month(createDate),date(createDate)')->orderBy(['createDate' => SORT_ASC])->all();
-        
-        $countData = count($projects);
+        $users = (new \yii\db\Query())->select('user.username,count(*) as count_user')->from('user')->innerJoin('project_staff','project_staff.userId = user.id')->groupBy('project_staff.userId')->all();
+
         $dataProject =[];
-       
         foreach ($projects as $project){
             $data = [];
                 array_push($data,$project['createDate']);
                 array_push($data,$project['count_project']);
                 array_push($dataProject,$data);
         }
-        return $this->render('chart-month',['dataProject' => $dataProject]);
+        $dataNameUser = [];
+        $dataCountProject = [];
+        foreach ($users as $user){
+            array_push($dataNameUser,$user['username']);
+            array_push($dataCountProject,$user['count_user']);
+        }
+        return $this->render('chart-month',['dataProject' => $dataProject,'dataNameUser' => $dataNameUser,'dataCountProject' => $dataCountProject]);
     }
 }

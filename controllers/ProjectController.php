@@ -35,28 +35,19 @@ class ProjectController extends Controller
                  'rules' => [
                      [
                          'allow' => true,
-                         'actions' => ['index'],
+                         'actions' => ['index','view'],
                          'roles' => ['staff'],
+                     ],
+                     [
+                         'allow' => true,
+                         'actions' => ['create','update', 'delete'],
+                         'roles' => ['manager'],
                      ],
                      [
                          'allow' => true,
                          'actions' => ['view'],
-                         'roles' => ['staff'],
-                     ],
-                     [
-                         'allow' => true,
-                         'actions' => ['create'],
-                         'roles' => ['manager'],
-                     ],
-                     [
-                         'allow' => true,
-                         'actions' => ['update'],
-                         'roles' => ['manager'],
-                     ],
-                     [
-                         'allow' => true,
-                         'actions' => ['delete'],
-                         'roles' => ['manager'],
+                         'roles' => ['viewProject'],
+//                         'roleParams' => ['projectManagerId' => 3],
                      ],
                  ],
              ],
@@ -71,11 +62,10 @@ class ProjectController extends Controller
     {
             $searchModel = new ProjectSearch();
             $model = new ProjectStaff();
-
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
             $staff =(new \yii\db\Query())->select('userId,projectId,user.username,GROUP_CONCAT(user.username) as nameStaff ')->from('project_staff')
-                                         ->leftJoin('project' ,'project.id = project_staff.projectId')
-                                         ->leftJoin('user' , 'user.id = project_staff.userId')->groupBy('projectId')->all();
+                                         ->innerJoin('project' ,'project.id = project_staff.projectId')
+                                         ->innerJoin('user' , 'user.id = project_staff.userId')->groupBy('projectId')->all();
             return $this->render('index', [
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
@@ -93,8 +83,9 @@ class ProjectController extends Controller
     public function actionView($id)
     {
         $userId['userId'] = Yii::$app->user->identity->id;
+        $model = $this->findModel( $id );
         $staffId = (new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
-        if(Yii::$app->user->identity->role != 3 || in_array($userId,$staffId)){
+        if(\Yii::$app->user->can('viewProject', ['projectManagerId' => Yii::$app->user->identity->id])){
             return $this->render('view', [
                 'model' => $this->findModel($id),
             ]);
@@ -104,12 +95,8 @@ class ProjectController extends Controller
         }
     }
 
-    public function action($id)
-    {
-        return $this->render('view', [
-            'model' => $this->findModel($id),
-        ]);
-    }
+
+
 
     /**
      * Creates a new Project model.
@@ -128,6 +115,8 @@ class ProjectController extends Controller
                 else{
                     $userId =Yii::$app->user->identity->id;
                 }
+                $model->createDate = date('Y-m-d H:i:s');
+                $model->updateDate = date('Y-m-d H:i:s');
                 $model->projectManagerId = $userId;
                 $model->save();
                 if (Yii::$app->user->identity->role == 2) {
@@ -140,8 +129,6 @@ class ProjectController extends Controller
                         $newProjectStaff->save();
                     }
                 }
-
-
                 return $this->redirect(['view', 'id' => $model->id]);
             }
             if (Yii::$app->request->isAjax) {
@@ -201,43 +188,41 @@ class ProjectController extends Controller
             if ($model->load(Yii::$app->request->post())) {
                 $transaction =Yii::$app->db->beginTransaction();
                 try {
-                    if (Yii::$app->user->identity->role == 1){
-                        $userId =$_POST['Project']['project_manager'];
-                    }
-                    else{
-                        $userId =Yii::$app->user->identity->id;
+                    if (Yii::$app->user->identity->role == 1) {
+                        $userId = $_POST['Project']['project_manager'];
+                    } else {
+                        $userId = Yii::$app->user->identity->id;
                     }
                     $model->projectManagerId = $userId;
+                    $model->updateDate = date('Y-m-d H:i:s');
                     $model->save();
                     if (Yii::$app->user->identity->role == 2) {
                         $StaffList = $_POST['Project']['staff'];
                         foreach ($StaffList as $value) {
 
-                            if(!in_array($value,$model->staff)){
+                            if (!in_array($value, $model->staff)) {
                                 $newProjectStaff = new ProjectStaff();
                                 $newProjectStaff->userId = $value;
                                 $newProjectStaff->projectId = $model->id;
                                 $newProjectStaff->save();
+
                             }
                         }
                         foreach ($projectStaffs as $item) {
-                            if(!in_array($item->userId,$StaffList)){
+                            if (!in_array($item->userId, $StaffList)) {
                                 $item->delete();
+
                             }
                         }
                     }
-                    $transaction->commit();
-                } catch (\Exception $e) {
+                $transaction->commit();
+                }
+                catch(Exception $e)
+                {
                     $transaction->rollBack();
-                    throw $e;
-                } catch (\Throwable $e) {
-                    $transaction->rollBack();
-                    throw $e;
                 }
                 return $this->redirect(['view', 'id' => $model->id]);
-
             }
-
             return $this->render('update', [
                 'model' => $model,
                 'staffs' => $staffs,
@@ -254,13 +239,8 @@ class ProjectController extends Controller
      */
     public function actionDelete($id)
     {
-//        if(Yii::$app->user->identity->role !=3){
-            $this->findModel($id)->delete();
-            return $this->redirect(['index']);
-//        }
-//        else{
-//            throw new ForbiddenHttpException;
-//        }
+        $this->findModel($id)->delete();
+        return $this->redirect(['index']);
     }
 
     /**
@@ -275,7 +255,6 @@ class ProjectController extends Controller
         if (($model = Project::findOne($id)) !== null) {
             return $model;
         }
-
         throw new NotFoundHttpException('The requested page does not exist.');
     }
 }
