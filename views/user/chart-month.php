@@ -10,18 +10,13 @@ use yii\grid\GridView;
 $this->title = 'Chart-month';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
+ 
 <?php
 
 $series = [
     [
         'name' => 'Project',
-        'data' => [
-            ['2019-12-05', 1],
-            ['2020-10-04', 1],
-            ['2020-10-10', 1],
-            ['2020-11-05', 2],
-            ['2020-12-05', 1],
-        ],
+        'data' => $dataProject,
     ],
 
 ];
