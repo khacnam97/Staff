@@ -34,9 +34,9 @@ $this->params['breadcrumbs'][] = $this->title;
         'id' => 'table-project',
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-            'id',
+            'idProject',
             'name_project',
-            'username',
+            'projectManager',
             'description',
             'staff',
 
