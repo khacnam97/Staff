@@ -7,9 +7,9 @@ use app\models\Project;
 /**
  * Checks if authorID matches user passed via params
  */
-class ViewProjectRule extends Rule
+class DeleteProjectRule extends Rule
 {
-    public $name= 'isViewProject';
+    public $name= 'isDeleteProject';
 
     /**
      * @param string|int $user the user ID.
@@ -18,7 +18,8 @@ class ViewProjectRule extends Rule
      * @return bool a value indicating whether the rule permits the role or permission it is associated with.
      */
     public function execute($user, $item, $params)
-    { 
-        return isset($params['idUser']) ? in_array($user,$params['idUser']) : false;
+    {
+        return isset($params['project']) ? $params['project']->projectManagerId == $user : false;
+
     }
 }
