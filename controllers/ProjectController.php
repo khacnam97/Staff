@@ -40,14 +40,8 @@ class ProjectController extends Controller
                      ],
                      [
                          'allow' => true,
-                         'actions' => ['create','update', 'delete'],
+                         'actions' => ['create','update','view' ,'delete'],
                          'roles' => ['manager'],
-                     ],
-                     [
-                         'allow' => true,
-                         'actions' => ['view'],
-                         'roles' => ['viewProject'],
-//                         'roleParams' => ['projectManagerId' => 3],
                      ],
                  ],
              ],
@@ -84,8 +78,13 @@ class ProjectController extends Controller
     {
         $userId['userId'] = Yii::$app->user->identity->id;
         $model = $this->findModel( $id );
-        $staffId = (new \yii\db\Query())->select('userId')->from('project_staff')->where(['projectId' => $id])->all();
-        if(\Yii::$app->user->can('viewProject', ['projectManagerId' => Yii::$app->user->identity->id])){
+        $idUser = [];
+        array_push($idUser,$model->projectManagerId);
+        $staffIds = ProjectStaff::find()->where(['projectId' => $id])->all();
+        foreach($staffIds as $staff){
+            array_push($idUser,$staff->userId);
+        }
+        if(\Yii::$app->user->can('viewProject' ,['idUser' => $idUser])){
             return $this->render('view', [
                 'model' => $this->findModel($id),
             ]);
@@ -171,8 +170,9 @@ class ProjectController extends Controller
      */
     public function actionUpdate($id)
     {
-
-            $model = $this->findModel($id);
+        $model = $this->findModel($id);
+        if(\Yii::$app->user->can('updateProject' ,['project' =>$model])){
+            // $model = $this->findModel($id);
             $staffs =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
 
             /** @var ProjectStaff[] $projectStaffs */
@@ -228,6 +228,10 @@ class ProjectController extends Controller
                 'staffs' => $staffs,
                 'projectManager' => $projectManager
             ]);
+        }
+        else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**
