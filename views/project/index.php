@@ -8,7 +8,7 @@ use app\models\User;
 /* @var $this yii\web\View */
 /* @var $searchModel app\models\ProjectSearch */
 /* @var $dataProvider yii\data\ActiveDataProvider */
-/* @var $staff  */
+/* @var $staffs[]  */
 /* @var $model app\models\ProjectStaff */
 $this->title = 'Projects';
 $this->params['breadcrumbs'][] = $this->title;
@@ -35,24 +35,11 @@ $this->params['breadcrumbs'][] = $this->title;
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
             'id',
-            'name',
+            'name_project',
             'username',
             'description',
-            [
-                'format' => 'raw',
-//                'format' => 'html',
-                'class' => 'yii\grid\DataColumn',
-                'attribute'=>'Staff',
-                'value' => function ($data) use ($staff){
-                    foreach ($staff as $staffs) {
+            'staff',
 
-                        if($staffs['projectId'] == $data->id){
-                            return $staffs['nameStaff'];
-                        }
-                    }
-                    return '';
-                },
-            ],
 
             [
                 'format' => 'raw',

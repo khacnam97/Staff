@@ -40,7 +40,7 @@ class ProjectController extends Controller
                      ],
                      [
                          'allow' => true,
-                         'actions' => ['create','update','view' ,'delete'],
+                         'actions' => ['create','update','delete'],
                          'roles' => ['manager'],
                      ],
                  ],
@@ -57,13 +57,14 @@ class ProjectController extends Controller
             $searchModel = new ProjectSearch();
             $model = new ProjectStaff();
             $dataProvider = $searchModel->search(Yii::$app->request->queryParams);
-            $staff =(new \yii\db\Query())->select('userId,projectId,user.username,GROUP_CONCAT(user.username) as nameStaff ')->from('project_staff')
+            $staffs =(new \yii\db\Query())->select('userId,projectId,user.username,GROUP_CONCAT(user.username) as nameStaff ')
+                                         ->from('project_staff')
                                          ->innerJoin('project' ,'project.id = project_staff.projectId')
                                          ->innerJoin('user' , 'user.id = project_staff.userId')->groupBy('projectId')->all();
             return $this->render('index', [
                 'searchModel' => $searchModel,
                 'dataProvider' => $dataProvider,
-                'staff' => $staff,
+                'staffs' => $staffs,
                 'model' => $model
             ]);
     }
@@ -172,7 +173,6 @@ class ProjectController extends Controller
     {
         $model = $this->findModel($id);
         if(\Yii::$app->user->can('updateProject' ,['project' =>$model])){
-            // $model = $this->findModel($id);
             $staffs =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
 
             /** @var ProjectStaff[] $projectStaffs */
@@ -243,8 +243,14 @@ class ProjectController extends Controller
      */
     public function actionDelete($id)
     {
-        $this->findModel($id)->delete();
-        return $this->redirect(['index']);
+        $model = $this->findModel($id);
+        if(\Yii::$app->user->can('deleteProject' ,['project' =>$model])){
+            $this->findModel($id)->delete();
+            return $this->redirect(['index']);
+        }
+        else {
+            throw new ForbiddenHttpException;
+        }
     }
 
     /**

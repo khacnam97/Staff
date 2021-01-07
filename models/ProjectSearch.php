@@ -14,12 +14,14 @@ class ProjectSearch extends Project
     /**
      * {@inheritdoc}
      */
-    public $addStaff;
+    public $username;
+    public $name_project;
+    public $staff;
     public function rules()
     {
         return [
             [['id', 'projectManagerId'], 'integer'],
-            [['name', 'description', 'createDate', 'updateDate'], 'safe'],
+            [['name', 'description', 'createDate', 'updateDate','username','staff','name_project'], 'safe'],
         ];
     }
 
@@ -32,6 +34,8 @@ class ProjectSearch extends Project
         return Model::scenarios();
     }
 
+
+
     /**
      * Creates data provider instance with search query applied
      *
@@ -41,15 +45,35 @@ class ProjectSearch extends Project
      */
     public function search($params)
     {
-        $query = Project::find();
-        $role = \Yii::$app->user->identity->role;
+
         $userId = \Yii::$app->user->identity->id;
-        if($role == 2) {
-            $query = Project::find()->where(['projectManagerId' => $userId]);
+
+        if(\Yii::$app->user->can('staff')) {
+
+            $query =ProjectStaff::find()->innerJoin('project', 'project.id = project_staff.projectId')
+                                         ->innerJoin('project_staff as p1', 'p1.projectId = project.id')
+                                         ->innerJoin('user', 'user.id = project_staff.userId')
+                                         ->select('project.id, GROUP_CONCAT(user.username) as staff,project.*,project.name as name_project,user.username as project_manager')
+                                         ->where(['project_staff.userId' => $userId])
+                                         ->groupBy('project.id')->all();
+            }
+        if(\Yii::$app->user->can('manager')) {
+            $query = ProjectStaff::find()->select('GROUP_CONCAT(user.username) as staff,project.*')
+
+                                    ->rightJoin('project', 'project.id = project_staff.projectId')
+                                    ->leftJoin('user', 'user.id = project_staff.userId')
+                                    ->where(['project.projectManagerId' => $userId])
+                                    ->groupBy('project.id');
         }
-        if($role == 3) {
-            $query = Project::find()->rightJoin('project_staff','project.id = project_staff.projectId')->where(['project_staff.userId' => $userId]);
+        if(\Yii::$app->user->can('admin')) {
+            $query = ProjectStaff::find()->select('GROUP_CONCAT(user.username) as staff,project.*')
+
+                                    ->rightJoin('project', 'project.id = project_staff.projectId')
+                                    ->leftJoin('user', 'user.id = project_staff.userId')
+                                    ->groupBy('project.id');
         }
+
+
         // add conditions that should always apply here
 
         $dataProvider = new ActiveDataProvider([
@@ -57,23 +81,32 @@ class ProjectSearch extends Project
 
         ]);
 
+        $dataProvider->setSort([
+            'attributes' => [
+                'id',
+                'name_project',
+                'description',
+                'username'
+            ]
+        ]);
         $this->load($params);
-
+        $a= $params;
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
+            $query->joinWith(['user']);
             return $dataProvider;
         }
 
-        // grid filtering conditions
-        $query->andFilterWhere([
-            'id' => $this->id,
-            'projectManagerId' => $this->projectManagerId,
-            'createDate' => $this->createDate,
-            'updateDate' => $this->updateDate,
-        ]);
+        $query->andFilterWhere(['project.id' => $this->id]);// where ==
+        $query->andFilterWhere(['like','project.name' , $this->name]);// where like
+        $query->andFilterWhere(['like','project.description' , $this->description]);// where like
+//        $query->andFilterWhere(['like','project.project_manager' , $this->project_manager]);
+        $query->joinWith(['user as userManager' => function ($q) {
+            $q->andwhere('userManager.username LIKE "%' . $this->username . '%"');
+        }]);
 
-        $query->andFilterWhere(['like', 'name', $this->name])
-            ->andFilterWhere(['like', 'description', $this->description]);
+//        $query->andFilterWhere(['like', 'name', $this->name])
+//            ->andFilterWhere(['like', 'description', $this->description]);
 
         return $dataProvider;
     }
