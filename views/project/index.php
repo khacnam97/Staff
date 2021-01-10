@@ -34,12 +34,26 @@ $this->params['breadcrumbs'][] = $this->title;
         'id' => 'table-project',
         'columns' => [
             ['class' => 'yii\grid\SerialColumn'],
-            'idProject',
-            'name_project',
-            'projectManager',
+            'id',
+            'name',
+            'username',
             'description',
-            'staff',
-
+            // 'staff',
+            
+            [
+                'format' => 'raw',
+//                'format' => 'html',
+                'class' => 'yii\grid\DataColumn',
+                'attribute'=>'staff',
+                'value' => function ($data) use ($staffs){
+                    foreach ($staffs as $staff) {
+                        if($staff['projectId'] == $data->id){
+                            return $staff['nameStaff'];
+                        }
+                    }
+                    return '';
+                },
+            ],
 
             [
                 'format' => 'raw',
@@ -48,7 +62,7 @@ $this->params['breadcrumbs'][] = $this->title;
                 'attribute'=>'Add Staff',
                 'visible' => Yii::$app->user->can('manager'),
                 'value' => function ($data) {
-                    if (Yii::$app->user->identity->role != 3){
+                    if (Yii::$app->user->can('manager')){
                         return Html::a('<span class="glyphicon glyphicon-plus"></span>','#', [
                             'id' => 'activity-view-link',
                             'class' => 'btn btn-success modal-btn',
@@ -66,12 +80,12 @@ $this->params['breadcrumbs'][] = $this->title;
             ['class' => 'yii\grid\ActionColumn',
                 'buttons'=>[
                     'update'=>function ($url, $model) {
-                        if(Yii::$app->user->identity->role != 3){
+                        if(Yii::$app->user->can('manager')){
                             return Html::a('<span class="glyphicon glyphicon-pencil"></span>', ['project/update', 'id' => $model->id], ['class' => 'profile-link']);
                         }
                     },
                     'delete'=>function ($url, $model) {
-                        if(Yii::$app->user->identity->role != 3){
+                        if(Yii::$app->user->can('manager')){
                             return Html::a('<span class="glyphicon glyphicon-trash"></span>', ['project/delete', 'id' => $model->id], ['class' => 'profile-link',  'title' => Yii::t('app', 'Delete'),'data-confirm' => Yii::t('yii', 'Are you sure you want to delete?'),
                                 'data-method' => 'post', 'data-pjax' => '0']);
 
@@ -92,7 +106,7 @@ $this->params['breadcrumbs'][] = $this->title;
     var projectId ;
     $("#table-project").on('click', ".modal-btn", function(e){
         projectId =$(this).parents('tr').data('key');
-
+        console.log(projectId);
         $('#modal-opened').modal('show');
     });
 

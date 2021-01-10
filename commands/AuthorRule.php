@@ -19,7 +19,7 @@ class AuthorRule extends Rule
      */
     public function execute($user, $item, $params)
     {
-            return isset($params['project']) ? $params['project']->projectManagerId == $user : false;
+        return isset($params['project']) ? $params['project']->projectManagerId == $user : false;
         
     }
 }
