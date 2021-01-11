@@ -106,10 +106,12 @@ class ProjectController extends Controller
     public function actionCreate()
     {
             $model = new Project();
-            $staffs =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
-            $projectManager = User::find()->where(['role' => 2])->all();
+            $staffs =(new \yii\db\Query())->select('id,username')->from('user')
+                                        ->innerJoin('auth_assignment','user.id = auth_assignment.user_id')
+                                        ->where(['auth_assignment.item_name' => 'manager'])->all();
+            $projectManager = User::find()->innerJoin('auth_assignment','user.id = auth_assignment.user_id')->where(['auth_assignment.item_name' => 'manager'])->all();
             if ($model->load(Yii::$app->request->post()) ) {
-                if (Yii::$app->user->identity->role == 1){
+                if (Yii::$app->user->can('admin')){
                     $userId =$_POST['Project']['project_manager'];
                 }
                 else{
@@ -119,7 +121,7 @@ class ProjectController extends Controller
                 $model->updateDate = date('Y-m-d H:i:s');
                 $model->projectManagerId = $userId;
                 $model->save();
-                if (Yii::$app->user->identity->role == 2) {
+                if (Yii::$app->user->can('manager')) {
                     $StaffList = $_POST['Project']['staff'];
                     foreach ($StaffList as $value)
                     {
@@ -173,7 +175,9 @@ class ProjectController extends Controller
     {
         $model = $this->findModel($id);
         if(\Yii::$app->user->can('updateProject' ,['project' =>$model])){
-            $staffs =(new \yii\db\Query())->select('id,username')->from('user')->where(['role' => 3])->all();
+            $staffs =(new \yii\db\Query())->select('id,username')->from('user')
+                                        ->innerJoin('auth_assignment','user.id = auth_assignment.user_id')
+                                        ->where(['auth_assignment.item_name' => 'manager'])->all();
 
             /** @var ProjectStaff[] $projectStaffs */
 
@@ -183,12 +187,13 @@ class ProjectController extends Controller
                 array_push($arrStaff,$staff->userId);
             }
             $model->staff = $arrStaff;
-            $projectManager = User::find()->where(['role' => 2])->all();
+            $projectManager = User::find()->innerJoin('auth_assignment','user.id = auth_assignment.user_id')
+                                          ->where(['auth_assignment.item_name' => 'manager'])->all();
 
             if ($model->load(Yii::$app->request->post())) {
                 $transaction =Yii::$app->db->beginTransaction();
                 try {
-                    if (Yii::$app->user->identity->role == 1) {
+                    if (Yii::$app->user->can('admin')) {
                         $userId = $_POST['Project']['project_manager'];
                     } else {
                         $userId = Yii::$app->user->identity->id;
@@ -196,7 +201,7 @@ class ProjectController extends Controller
                     $model->projectManagerId = $userId;
                     $model->updateDate = date('Y-m-d H:i:s');
                     $model->save();
-                    if (Yii::$app->user->identity->role == 2) {
+                    if (Yii::$app->user->can('manager')) {
                         $StaffList = $_POST['Project']['staff'];
                         foreach ($StaffList as $value) {
 

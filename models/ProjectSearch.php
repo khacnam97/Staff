@@ -17,11 +17,13 @@ class ProjectSearch extends Project
     public $username;
     public $name_project;
     public $staff;
+    public $idProject;
+    public $projectManager;
     public function rules()
     {
         return [
             [['id', 'projectManagerId'], 'integer'],
-            [['name', 'description', 'createDate', 'updateDate','username','staff','name_project'], 'safe'],
+            [['name', 'description', 'createDate','idProject', 'updateDate','username','projectManager','staff','name_project'], 'safe'],
         ];
     }
 
@@ -45,32 +47,16 @@ class ProjectSearch extends Project
      */
     public function search($params)
     {
-
         $userId = \Yii::$app->user->identity->id;
 
         if(\Yii::$app->user->can('staff')) {
-
-            $query =ProjectStaff::find()->innerJoin('project', 'project.id = project_staff.projectId')
-                                         ->innerJoin('project_staff as p1', 'p1.projectId = project.id')
-                                         ->innerJoin('user', 'user.id = project_staff.userId')
-                                         ->select('project.id, GROUP_CONCAT(user.username) as staff,project.*,project.name as name_project,user.username as project_manager')
-                                         ->where(['project_staff.userId' => $userId])
-                                         ->groupBy('project.id')->all();
-            }
+            $query = Project::find()->rightJoin('project_staff','project.id = project_staff.projectId')->where(['project_staff.userId' => $userId]);
+        }
         if(\Yii::$app->user->can('manager')) {
-            $query = ProjectStaff::find()->select('GROUP_CONCAT(user.username) as staff,project.*')
-
-                                    ->rightJoin('project', 'project.id = project_staff.projectId')
-                                    ->leftJoin('user', 'user.id = project_staff.userId')
-                                    ->where(['project.projectManagerId' => $userId])
-                                    ->groupBy('project.id');
+            $query = Project::find()->innerJoin('user','user.id = project.projectManagerId')->where(['project.projectManagerId' => $userId]);
         }
         if(\Yii::$app->user->can('admin')) {
-            $query = ProjectStaff::find()->select('GROUP_CONCAT(user.username) as staff,project.*')
-
-                                    ->rightJoin('project', 'project.id = project_staff.projectId')
-                                    ->leftJoin('user', 'user.id = project_staff.userId')
-                                    ->groupBy('project.id');
+            $query = Project::find();
         }
 
 
@@ -84,9 +70,10 @@ class ProjectSearch extends Project
         $dataProvider->setSort([
             'attributes' => [
                 'id',
-                'name_project',
+                'name',
                 'description',
-                'username'
+                'username',
+                'staff'
             ]
         ]);
         $this->load($params);
@@ -99,14 +86,15 @@ class ProjectSearch extends Project
 
         $query->andFilterWhere(['project.id' => $this->id]);// where ==
         $query->andFilterWhere(['like','project.name' , $this->name]);// where like
-        $query->andFilterWhere(['like','project.description' , $this->description]);// where like
-//        $query->andFilterWhere(['like','project.project_manager' , $this->project_manager]);
+        $query->andFilterWhere(['like','project.description' , $this->description]);
         $query->joinWith(['user as userManager' => function ($q) {
             $q->andwhere('userManager.username LIKE "%' . $this->username . '%"');
         }]);
-
-//        $query->andFilterWhere(['like', 'name', $this->name])
-//            ->andFilterWhere(['like', 'description', $this->description]);
+        if(!empty($this->staff)){
+            $query->innerJoin('project_staff as p2', 'p2.projectId = project.id')
+            ->innerJoin('user u3', 'u3.id = p2.userId')
+            ->andFilterWhere(['like','u3.username' , $this->staff]);
+        }
 
         return $dataProvider;
     }

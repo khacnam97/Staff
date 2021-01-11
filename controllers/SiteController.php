@@ -81,7 +81,7 @@ class SiteController extends Controller
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            if(Yii::$app->user->identity->role ==1) {
+            if(Yii::$app->user->can('admin')) {
                 return $this->redirect('user/index');
             }
             else  return $this->redirect('project/index');
@@ -97,7 +97,7 @@ class SiteController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             if ($user = $model->signup()) {
                 if (Yii::$app->getUser()->login($user)) {
-                    if(Yii::$app->user->identity->role ==1) {
+                    if(Yii::$app->user->can('admin')) {
                         return $this->redirect('user/index');
                     }
                     else return $this->redirect('project/index');

@@ -21,14 +21,14 @@ use yii\helpers\ArrayHelper;
 
     <?= $form->field($model, 'description')->textInput(['maxlength' => true]) ?>
 
-    <?php if(Yii::$app->user->identity->role == 2) { ?>
+    <?php if(Yii::$app->user->can('manager')) { ?>
         <div class="form-group">
             <label class="control-label">Staff</label>
             <?=  Html::activeCheckboxList($model, 'staff',
                 ArrayHelper::map($staffs, 'id', 'username'), array('class'=>'form-control'))
             ?>
         </div>
-    <?php } else{ ?>
+    <?php } if(Yii::$app->user->can('admin')){ ?>
     <div class="form-group">
         <label class="control-label">Project Manager</label>
             <?=  Html::activeDropDownList($model, 'project_manager',
