@@ -15,15 +15,12 @@ class ProjectSearch extends Project
      * {@inheritdoc}
      */
     public $username;
-    public $name_project;
     public $staff;
-    public $idProject;
-    public $projectManager;
     public function rules()
     {
         return [
             [['id', 'projectManagerId'], 'integer'],
-            [['name', 'description', 'createDate','idProject', 'updateDate','username','projectManager','staff','name_project'], 'safe'],
+            [['name', 'description', 'createDate', 'updateDate','username','staff'], 'safe'],
         ];
     }
 
@@ -50,10 +47,10 @@ class ProjectSearch extends Project
         $userId = \Yii::$app->user->identity->id;
 
         if(\Yii::$app->user->can('staff')) {
-            $query = Project::find()->rightJoin('project_staff','project.id = project_staff.projectId')->where(['project_staff.userId' => $userId]);
+            $query = Project::find()->innerJoin('project_staff','project.id = project_staff.projectId')->where(['project_staff.userId' => $userId]);
         }
         if(\Yii::$app->user->can('manager')) {
-            $query = Project::find()->innerJoin('user','user.id = project.projectManagerId')->where(['project.projectManagerId' => $userId]);
+            $query = Project::find()->where(['project.projectManagerId' => $userId]);
         }
         if(\Yii::$app->user->can('admin')) {
             $query = Project::find();
@@ -77,10 +74,9 @@ class ProjectSearch extends Project
             ]
         ]);
         $this->load($params);
-        $a= $params;
         if (!$this->validate()) {
             // uncomment the following line if you do not want to return any records when validation fails
-            $query->joinWith(['user']);
+//            $query->joinWith(['user']);
             return $dataProvider;
         }
 
@@ -90,7 +86,7 @@ class ProjectSearch extends Project
         $query->joinWith(['user as userManager' => function ($q) {
             $q->andwhere('userManager.username LIKE "%' . $this->username . '%"');
         }]);
-        if(!empty($this->staff)){
+        if(!$this->staff){
             $query->innerJoin('project_staff as p2', 'p2.projectId = project.id')
             ->innerJoin('user u3', 'u3.id = p2.userId')
             ->andFilterWhere(['like','u3.username' , $this->staff]);

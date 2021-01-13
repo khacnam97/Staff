@@ -51,6 +51,9 @@ $config = [
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
         ],
+        'excel'=>[
+            'class'=>'application.extensions.PHPExcel',
+        ],
         'db' => $db,
         'urlManager' => [
             'enablePrettyUrl' => true,
