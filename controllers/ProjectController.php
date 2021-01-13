@@ -250,7 +250,16 @@ class ProjectController extends Controller
     {
         $model = $this->findModel($id);
         if(\Yii::$app->user->can('deleteProject' ,['project' =>$model])){
-            $this->findModel($id)->delete();
+            $transaction =Yii::$app->db->beginTransaction();
+            try {
+                $this->findModel($id)->delete();
+                Yii::$app->db->createCommand()->delete('project_staff', ['projectId' => $id])->execute();
+                $transaction->commit();
+            }
+            catch(Exception $e)
+            {
+                $transaction->rollBack();
+            }
             return $this->redirect(['index']);
         }
         else {

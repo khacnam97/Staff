@@ -4,6 +4,7 @@ namespace app\controllers;
 
 use app\models\AuthAssignment;
 use app\models\AuthItem;
+use app\models\HanbaiSokuhouData;
 use app\models\Project;
 use Yii;
 use app\models\User;
@@ -47,7 +48,7 @@ class UserController extends Controller
                     ],
                     [
                         'allow' => true,
-                        'actions' => ['change-password'],
+                        'actions' => ['change-password','export'],
                         'roles' => ['@'],
                     ],
                 ],
@@ -166,6 +167,8 @@ class UserController extends Controller
     {
         if (Yii::$app->user->identity->id != $id) {
             $this->findModel($id)->delete();
+            Yii::$app->db->createCommand()->delete('project_staff',['userId' => $id])->execute();
+            Yii::$app->db->createCommand()->delete('project',['projectManagerId' => $id])->execute();
             return $this->redirect(['index']);
         }
     }
@@ -192,7 +195,6 @@ class UserController extends Controller
         $modeluser =  User::findOne($userId) ;
 
         if($model->load(Yii::$app->request->post())){
-            $a = $model->validate();
             if($model->validate()){
                 try{
                     $modeluser->password =Yii::$app->security->generatePasswordHash($_POST['PasswordForm']['new_password']);
@@ -246,4 +248,62 @@ class UserController extends Controller
         }
         return $this->render('chart-month',['dataProject' => $dataProject,'dataNameUser' => $dataNameUser,'dataCountProject' => $dataCountProject]);
     }
+    public function getDataHanbai(){
+        $data = (new \yii\db\Query())->select('*')->from('company')
+                ->innerJoin('hanbai_sokuhou_data','hanbai_sokuhou_data.com_code = company.com_cd')
+                ->innerJoin('hanbai_com_order','hanbai_com_order.com_cd = company.com_cd')
+                ->where(['like','hanbai_sokuhou_data.trn_date','2004-09'])
+                ->andWhere(['hanbai_sokuhou_data.sokuhou_id' => 2])
+                ->orderBy('hanbai_com_order.hanbai_com_order_id')->all();
+        return $data;
+    }
+    public function  actionExport()
+    {
+        $model = new HanbaiSokuhouData();
+        if ($model->load(Yii::$app->request->post())){
+            $data = $this->getDataHanbai();
+            $pathFileTemplate ='C:\xampp\htdocs\Staff\views\excel\販売速報統計_白紙.xlsx';
+            $fileType = \PhpOffice\PhpSpreadsheet\IOFactory::identify($pathFileTemplate);
+            $objReader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($fileType);
+            $objPhpSpreadsheet = $objReader->load($pathFileTemplate);
+            $fileName ='販売速報統計_白紙.xlsx';
+            $this->addData($objPhpSpreadsheet->setActiveSheetIndex('0'), $data);
+            header('Content-Type: application/vnd.ms-excel');
+            header('Content-Disposition: attachment;filename="'. $fileName .'"');
+            header('Cache-Control: max-age=0');
+            $objWriter = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($objPhpSpreadsheet, 'Xlsx');
+            $objWriter->save('php://output');
+        }
+        return $this->render('export',['model' =>$model]);
+    }
+    public function  addData($setCell, $data){
+        $setCell->setCellValue('A2', '対象年月(YYYY年MM月)　統計種類名　社別販売速報明細');
+        $index = 1;
+        $rowBegin = 7;
+        $rowCurrent = 7;
+        $length = count($data);
+        $setCell->insertNewRowBefore($rowBegin, $length); //insert row len before rowbegin
+        for ($i = 0; $i < $length; $i++) {
+            $setCell
+                ->setCellValue('B' . $rowCurrent, $index)
+                ->setCellValue('E' . $rowCurrent, 'HYO')
+                ->setCellValue('F' . $rowCurrent, 'F')
+                ->setCellValue('G' . $rowCurrent, 'F')
+                ->setCellValue('H' . $rowCurrent, 'HYO')
+                ->setCellValue('J' . $rowCurrent, 'F')
+                ->setCellValue('K' . $rowCurrent, 'F')
+                ->setCellValue('M' . $rowCurrent, 'HYO')
+                ->setCellValue('N' . $rowCurrent, 'F')
+                ->setCellValue('O' . $rowCurrent, 'F')
+                ->setCellValue('P' . $rowCurrent, 'HYO')
+                ->setCellValue('Q' . $rowCurrent, 'F')
+                ->setCellValue('R' . $rowCurrent, 'F')
+                ->setCellValue('T' . $rowCurrent, 'F');
+            $index++;
+            $rowCurrent++;
+        }
+        $setCell->removeRow($rowBegin -1);
+        return $this;
+    }
+
 }

@@ -21,7 +21,11 @@
         "kartik-v/yii2-widget-datetimepicker": "@dev",
         "kartik-v/yii2-widget-datepicker": "@dev",
         "richardfan1126/yii2-js-register": "*",
-        "onmotion/yii2-widget-apexcharts": "^1.0"
+        "onmotion/yii2-widget-apexcharts": "^1.0",
+        "moonlandsoft/yii2-phpexcel": "*",
+        "phpoffice/phpexcel": "^1.8",
+        "phpoffice/phpspreadsheet": "^1.16",
+        "yiisoft/yii2-jui": "*"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
