@@ -13,10 +13,10 @@ use yii\jui\DatePicker;
     <?php $form = ActiveForm::begin(); ?>
 
 
-    <?= $form->field($model, 'sokuhou_id')->textInput(['maxlength' => true]) ?>
-    <?= $form->field($model, 'trn_date')->widget(\yii\jui\DatePicker::classname(), [
-        //'language' => 'ru',
+    <?= $form->field($model, 'sokuhouId')->textInput(['maxlength' => true]) ?>
+    <?= $form->field($model, 'yearMonth')->widget(\yii\jui\DatePicker::classname(), [
         'dateFormat' => 'yyyy-MM',
+        'options' => ['class' => 'form-control']
     ]) ?>
     <div class="form-group">
         <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>

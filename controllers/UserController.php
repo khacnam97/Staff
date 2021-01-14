@@ -4,8 +4,10 @@ namespace app\controllers;
 
 use app\models\AuthAssignment;
 use app\models\AuthItem;
+use app\models\ExportForm;
 use app\models\HanbaiSokuhouData;
 use app\models\Project;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Yii;
 use app\models\User;
 use app\models\UserSearch;
@@ -230,8 +232,12 @@ class UserController extends Controller
     }
     public function actionChartMonth()
     {
-        $projects = (new \yii\db\Query())->select('createDate , count(*) as count_project')->from('project')->groupBy('year(createDate),month(createDate),date(createDate)')->orderBy(['createDate' => SORT_ASC])->all();
-        $users = (new \yii\db\Query())->select('user.username,count(*) as count_user')->from('user')->innerJoin('project_staff','project_staff.userId = user.id')->groupBy('project_staff.userId')->all();
+        $projects = (new \yii\db\Query())->select('createDate , count(*) as count_project')
+                    ->from('project')->groupBy('year(createDate),month(createDate),date(createDate)')
+                    ->orderBy(['createDate' => SORT_ASC])->all();
+        $users = (new \yii\db\Query())->select('user.username,count(*) as count_user')->from('user')
+                    ->innerJoin('project_staff','project_staff.userId = user.id')
+                    ->groupBy('project_staff.userId')->all();
 
         $dataProject =[];
         foreach ($projects as $project){
@@ -248,61 +254,114 @@ class UserController extends Controller
         }
         return $this->render('chart-month',['dataProject' => $dataProject,'dataNameUser' => $dataNameUser,'dataCountProject' => $dataCountProject]);
     }
-    public function getDataHanbai(){
-        $data = (new \yii\db\Query())->select('*')->from('company')
+
+    /**
+     * @param string $yearMonth
+     * @param int $sokuhouId
+     * @return array
+     */
+    public function getDataHanbai($yearMonth,$sokuhouId){
+        $data = (new \yii\db\Query())
+                ->select('company.com_name,company.com_cd,hanbai_sokuhou_data.chiku_id,hanbai_sokuhou_data.hanbai_daka as value')
+                ->from('company')
                 ->innerJoin('hanbai_sokuhou_data','hanbai_sokuhou_data.com_code = company.com_cd')
                 ->innerJoin('hanbai_com_order','hanbai_com_order.com_cd = company.com_cd')
-                ->where(['like','hanbai_sokuhou_data.trn_date','2004-09'])
-                ->andWhere(['hanbai_sokuhou_data.sokuhou_id' => 2])
-                ->orderBy('hanbai_com_order.hanbai_com_order_id')->all();
+                ->where(['like','hanbai_sokuhou_data.trn_date', $yearMonth])
+                ->andWhere(['hanbai_sokuhou_data.sokuhou_id' => $sokuhouId])
+                ->orderBy(['hanbai_com_order.hanbai_com_order_id' =>SORT_ASC])->all();
         return $data;
     }
+
+    /**
+     * @return string
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
+     */
     public function  actionExport()
     {
-        $model = new HanbaiSokuhouData();
+        $model = new ExportForm();
         if ($model->load(Yii::$app->request->post())){
-            $data = $this->getDataHanbai();
-            $pathFileTemplate ='C:\xampp\htdocs\Staff\views\excel\販売速報統計_白紙.xlsx';
+            $yearMonth = $_POST['ExportForm']['yearMonth'];
+            $sokuhouId = $_POST['ExportForm']['sokuhouId'];
+            $data = $this->getDataHanbai($yearMonth, $sokuhouId);
+            $pathFileTemplate =Yii::$app->getBasePath().'\views\excel\販売速報統計_白紙.xlsx';
             $fileType = \PhpOffice\PhpSpreadsheet\IOFactory::identify($pathFileTemplate);
             $objReader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($fileType);
             $objPhpSpreadsheet = $objReader->load($pathFileTemplate);
             $fileName ='販売速報統計_白紙.xlsx';
-            $this->addData($objPhpSpreadsheet->setActiveSheetIndex('0'), $data);
+            $this->addData($objPhpSpreadsheet->setActiveSheetIndex('0'), $data,$yearMonth);
             header('Content-Type: application/vnd.ms-excel');
             header('Content-Disposition: attachment;filename="'. $fileName .'"');
             header('Cache-Control: max-age=0');
             $objWriter = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($objPhpSpreadsheet, 'Xlsx');
             $objWriter->save('php://output');
+            return $this->render('export',['model' =>$model]);
         }
         return $this->render('export',['model' =>$model]);
     }
-    public function  addData($setCell, $data){
-        $setCell->setCellValue('A2', '対象年月(YYYY年MM月)　統計種類名　社別販売速報明細');
-        $index = 1;
+
+    /**
+     * @param Worksheet $sheet
+     * @param array $datas
+     * @param string $yearMonth
+     * @return $this
+     */
+    public function  addData($sheet, $datas,$yearMonth){
+        $yearMonth = explode('-', $yearMonth);
+        $sheet->setCellValue('A2', '対象年月('.$yearMonth[0].'年'.$yearMonth[1].'月)　統計種類名　社別販売速報明細');
         $rowBegin = 7;
-        $rowCurrent = 7;
-        $length = count($data);
-        $setCell->insertNewRowBefore($rowBegin, $length); //insert row len before rowbegin
+        $rowCurrent = 6;
+        $length = count($datas);
+        $currentComCD = '';
+        $arr = [
+            1 => 'E',
+            2 => 'F',
+            3 => 'G',
+            4 =>'H' ,
+            5 =>'J',
+            6 =>'K',
+            7 =>'M',
+            8 =>'N',
+            9 =>'O',
+            10 =>'P',
+            11 =>'Q',
+            12 =>'R',
+            14 =>'T',
+            ];
+        $lengthRow = 0;
         for ($i = 0; $i < $length; $i++) {
-            $setCell
-                ->setCellValue('B' . $rowCurrent, $index)
-                ->setCellValue('E' . $rowCurrent, 'HYO')
-                ->setCellValue('F' . $rowCurrent, 'F')
-                ->setCellValue('G' . $rowCurrent, 'F')
-                ->setCellValue('H' . $rowCurrent, 'HYO')
-                ->setCellValue('J' . $rowCurrent, 'F')
-                ->setCellValue('K' . $rowCurrent, 'F')
-                ->setCellValue('M' . $rowCurrent, 'HYO')
-                ->setCellValue('N' . $rowCurrent, 'F')
-                ->setCellValue('O' . $rowCurrent, 'F')
-                ->setCellValue('P' . $rowCurrent, 'HYO')
-                ->setCellValue('Q' . $rowCurrent, 'F')
-                ->setCellValue('R' . $rowCurrent, 'F')
-                ->setCellValue('T' . $rowCurrent, 'F');
-            $index++;
-            $rowCurrent++;
+            $data = $datas[$i];
+            if ($currentComCD != $data['com_cd']){
+                $lengthRow++;
+            }
+            $currentComCD = $data['com_cd'];
         }
-        $setCell->removeRow($rowBegin -1);
+//        $sheet->insertNewRowBefore($rowBegin, $lengthRow); //insert row len before rowbegin
+
+        for ($i = 0; $i < $length; $i++) {
+            $data = $datas[$i];
+            if ($currentComCD != $data['com_cd']){
+                $rowCurrent++;
+                if($rowCurrent >10){
+                    $sheet->insertNewRowBefore($rowCurrent, 1);
+                }
+            }
+            $col = $arr[$data['chiku_id']];
+            $sheet->setCellValue($col.$rowCurrent ,$data['value']);
+            $sheet->setCellValue('B'.$rowCurrent, $data['com_name']);
+            $sheet->setCellValue('I' .$rowCurrent, '=SUM(G'.$rowCurrent .':H'.$rowCurrent .')');
+            $sheet->setCellValue('L' .$rowCurrent, '=SUM(J'.$rowCurrent .':K'.$rowCurrent .')');
+            $sheet->setCellValue('S' .$rowCurrent, '=SUM(M'.$rowCurrent .':R'.$rowCurrent .')+SUM(J'.$rowCurrent .':K'.$rowCurrent .')+SUM(E'.$rowCurrent .':H'.$rowCurrent .')');
+            $sheet->setCellValue('U' .$rowCurrent, '=SUM(S'.$rowCurrent .':T'.$rowCurrent .')');
+            $currentComCD = $data['com_cd'];
+
+        }
+
+        $sheet->removeRow($rowBegin -1);
+//        if($rowCurrent <= 10 ){
+//            $sheet->removeRow($rowCurrent +1 ,10 - $rowCurrent);
+//        }
         return $this;
     }
 
