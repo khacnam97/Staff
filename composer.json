@@ -25,8 +25,7 @@
         "moonlandsoft/yii2-phpexcel": "*",
         "phpoffice/phpexcel": "^1.8",
         "phpoffice/phpspreadsheet": "^1.16",
-        "yiisoft/yii2-jui": "*",
-        "yiisoft/yii2-jj": "*"
+        "yiisoft/yii2-jui": "*"
     },
     "require-dev": {
         "yiisoft/yii2-debug": "~2.1.0",
