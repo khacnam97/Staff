@@ -2,9 +2,10 @@
 
 use yii\helpers\Html;
 use yii\widgets\ActiveForm;
-use yii\jui\DatePicker;
+use kartik\date\DatePicker;
 /* @var $this yii\web\View */
 /* @var $model app\models\User */
+
 
 
 ?>
@@ -14,10 +15,16 @@ use yii\jui\DatePicker;
 
 
     <?= $form->field($model, 'sokuhouId')->textInput(['maxlength' => true]) ?>
-    <?= $form->field($model, 'yearMonth')->widget(\yii\jui\DatePicker::classname(), [
-        'dateFormat' => 'yyyy-MM',
-        'options' => ['class' => 'form-control']
-    ]) ?>
+
+    <?= $form->field($model, 'yearMonth')->widget(DatePicker::className(), [
+                        'options' => ['placeholder' => 'Select month year ...', 'autocomplete' => 'off'],
+                        'pluginOptions' => [
+                            'format' => 'yyyy-mm',
+                            'todayHighlight' => true,
+                            'minViewMode'=>'months',
+                        ]
+    ])->label('Month year');?>
+
     <div class="form-group">
         <?= Html::submitButton('Save', ['class' => 'btn btn-success']) ?>
     </div>

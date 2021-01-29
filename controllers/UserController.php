@@ -2,21 +2,21 @@
 
 namespace app\controllers;
 
-use app\models\AuthAssignment;
-use app\models\AuthItem;
 use app\models\ExportForm;
-use app\models\HanbaiSokuhouData;
-use app\models\Project;
+use PhpOffice\PhpSpreadsheet\Exception;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Yii;
 use app\models\User;
 use app\models\UserSearch;
+use yii\db\StaleObjectException;
 use yii\filters\AccessControl;
 use yii\web\Controller;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\filters\VerbFilter;
 use app\models\PasswordForm;
+use yii\web\Response;
 
 /**
  * UserController implements the CRUD actions for User model.
@@ -168,7 +168,12 @@ class UserController extends Controller
     public function actionDelete($id)
     {
         if (Yii::$app->user->identity->id != $id) {
-            $this->findModel($id)->delete();
+            try {
+                $this->findModel($id)->delete();
+            } catch (StaleObjectException $e) {
+            } catch (NotFoundHttpException $e) {
+            } catch (\Throwable $e) {
+            }
             Yii::$app->db->createCommand()->delete('project_staff',['userId' => $id])->execute();
             Yii::$app->db->createCommand()->delete('project',['projectManagerId' => $id])->execute();
             return $this->redirect(['index']);
@@ -274,9 +279,6 @@ class UserController extends Controller
 
     /**
      * @return string
-     * @throws \PhpOffice\PhpSpreadsheet\Exception
-     * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
-     * @throws \PhpOffice\PhpSpreadsheet\Writer\Exception
      */
     public function  actionExport()
     {
@@ -286,18 +288,28 @@ class UserController extends Controller
             $sokuhouId = $_POST['ExportForm']['sokuhouId'];
             $data = $this->getDataHanbai($yearMonth, $sokuhouId);
             $pathFileTemplate =Yii::$app->getBasePath().'\views\excel\販売速報統計_白紙.xlsx';
-            $fileType = \PhpOffice\PhpSpreadsheet\IOFactory::identify($pathFileTemplate);
-            $objReader = \PhpOffice\PhpSpreadsheet\IOFactory::createReader($fileType);
+            $fileType = IOFactory::identify($pathFileTemplate);
+            $objReader = IOFactory::createReader($fileType);
             $objPhpSpreadsheet = $objReader->load($pathFileTemplate);
             $fileName ='販売速報統計_白紙.xlsx';
-            $this->addData($objPhpSpreadsheet->setActiveSheetIndex('0'), $data,$yearMonth);
-            header('Content-Type: application/vnd.ms-excel');
-            header('Content-Disposition: attachment;filename="'. $fileName .'"');
-            header('Cache-Control: max-age=0');
-            $objWriter = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($objPhpSpreadsheet, 'Xlsx');
-            $objWriter->save('php://output');
-            return $this->render('export',['model' =>$model]);
+            try {
+                $this->addData($objPhpSpreadsheet->setActiveSheetIndex('0'), $data, $yearMonth);
+                $objWriter = IOFactory::createWriter($objPhpSpreadsheet, 'Xlsx');
+                $outputDir = Yii::getAlias('@app/runtime');
+                $filePath = $outputDir . DIRECTORY_SEPARATOR  . time() . '.xlsx';
+                $objWriter->save( $filePath);
+                if (file_exists($filePath)) {
+                    \Yii::$app->response->sendFile($filePath, $fileName)
+                        ->on(Response::EVENT_AFTER_SEND, function($event) {
+                            unlink($event->data);
+                        }, $filePath);
+                }
+            } catch (Exception $e) {
+                Yii::$app->session->setFlash( 'error', $e->getMessage ());
+            }
+
         }
+
         return $this->render('export',['model' =>$model]);
     }
 
@@ -306,12 +318,13 @@ class UserController extends Controller
      * @param array $datas
      * @param string $yearMonth
      * @return $this
+     * @throws \PhpOffice\PhpSpreadsheet\Exception
      */
     public function  addData($sheet, $datas,$yearMonth){
         $yearMonth = explode('-', $yearMonth);
         $sheet->setCellValue('A2', '対象年月('.$yearMonth[0].'年'.$yearMonth[1].'月)　統計種類名　社別販売速報明細');
-        $rowBegin = 7;
-        $rowCurrent = 6;
+        $rowBegin = 8;
+        $currentRow = 5;
         $length = count($datas);
         $currentComCD = '';
         $arr = [
@@ -329,39 +342,41 @@ class UserController extends Controller
             12 =>'R',
             14 =>'T',
             ];
-        $lengthRow = 0;
+        $numberRow = 0;
         for ($i = 0; $i < $length; $i++) {
             $data = $datas[$i];
             if ($currentComCD != $data['com_cd']){
-                $lengthRow++;
+                $numberRow++;
             }
             $currentComCD = $data['com_cd'];
         }
-//        $sheet->insertNewRowBefore($rowBegin, $lengthRow); //insert row len before rowbegin
 
+        if($numberRow > 3){
+            $sheet->insertNewRowBefore($rowBegin, $numberRow -3);
+        }
+        else {
+            $sheet->removeRow($currentRow + 1,3 - $numberRow);
+        }
+
+        $currentComCD = '';
         for ($i = 0; $i < $length; $i++) {
             $data = $datas[$i];
             if ($currentComCD != $data['com_cd']){
-                $rowCurrent++;
-                if($rowCurrent >10){
-                    $sheet->insertNewRowBefore($rowCurrent, 1);
-                }
+                $currentRow++;
             }
             $col = $arr[$data['chiku_id']];
-            $sheet->setCellValue($col.$rowCurrent ,$data['value']);
-            $sheet->setCellValue('B'.$rowCurrent, $data['com_name']);
-            $sheet->setCellValue('I' .$rowCurrent, '=SUM(G'.$rowCurrent .':H'.$rowCurrent .')');
-            $sheet->setCellValue('L' .$rowCurrent, '=SUM(J'.$rowCurrent .':K'.$rowCurrent .')');
-            $sheet->setCellValue('S' .$rowCurrent, '=SUM(M'.$rowCurrent .':R'.$rowCurrent .')+SUM(J'.$rowCurrent .':K'.$rowCurrent .')+SUM(E'.$rowCurrent .':H'.$rowCurrent .')');
-            $sheet->setCellValue('U' .$rowCurrent, '=SUM(S'.$rowCurrent .':T'.$rowCurrent .')');
+            $sheet->setCellValue($col.$currentRow ,$data['value']);
+            $sheet->setCellValue('B'.$currentRow, $data['com_name']);
+            $sheet->setCellValue('I' .$currentRow, '=SUM(G'.$currentRow .':H'.$currentRow .')');
+            $sheet->setCellValue('L' .$currentRow, '=SUM(J'.$currentRow .':K'.$currentRow .')');
+            $sheet->setCellValue('S' .$currentRow, '=SUM(M'.$currentRow .':R'.$currentRow .')+SUM(J'.$currentRow .':K'.$currentRow .')+SUM(E'.$currentRow .':H'.$currentRow .')');
+            $sheet->setCellValue('U' .$currentRow, '=SUM(S'.$currentRow .':T'.$currentRow .')');
             $currentComCD = $data['com_cd'];
-
+        }
+        for ($i = 'E' ; $i <= 'U' ;$i++){
+            $sheet->setCellValue($i .($currentRow +1), '=SUM('.$i.($rowBegin - 2) .':'.$i.$currentRow.')');
         }
 
-        $sheet->removeRow($rowBegin -1);
-//        if($rowCurrent <= 10 ){
-//            $sheet->removeRow($rowCurrent +1 ,10 - $rowCurrent);
-//        }
         return $this;
     }
 
